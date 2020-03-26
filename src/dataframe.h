@@ -3,9 +3,9 @@
 #include "row.h"
 #include "schema.h"
 #include "column.h"
-#include "array.h"
 #include "string.h"
 #include "object.h"
+#include <vector>
 #include <thread>
 
 /****************************************************************************
@@ -18,19 +18,19 @@
 class DataFrame : public Object {
 public: 
 
-    ColumnArray* col_arr;
+    vector<Column*>* col_arr;
     Schema* schema_;
 
     /** Create a data frame with the same columns as the given df but with no rows or rownmaes */
     DataFrame(DataFrame& df) {
-      col_arr = new ColumnArray(df.col_arr);
-      schema_->types_ = new StringArray(df.schema_->types_);
+      col_arr = df.col_arr;
+      schema_->types_ = df.schema_->types_;
     }
 
     /** Create a data frame from a schema and columns. All columns are created
       * empty. */
     DataFrame(Schema& schema) {
-      col_arr = new ColumnArray();
+      col_arr = new vector<Column*>();
       schema_ = new Schema(schema);
 
       for (int i = 0; i < schema_->width(); i++) {
@@ -38,22 +38,22 @@ public:
         switch (t) {
           case 'S': {
             StringColumn* col = new StringColumn();
-            col_arr->add(col); 
+            col_arr->push_back(col); 
             break;
           }
           case 'B': {
             BoolColumn* col = new BoolColumn();
-            col_arr->add(col); 
+            col_arr->push_back(col); 
             break;
           }
           case 'I': {
             IntColumn* col = new IntColumn();
-            col_arr->add(col); 
+            col_arr->push_back(col); 
             break;
           }
           case 'F': {
             FloatColumn* col = new FloatColumn();
-            col_arr->add(col); 
+            col_arr->push_back(col); 
             break;
           }
           default:
@@ -79,29 +79,29 @@ public:
       * name is optional and external. A nullptr colum is undefined. */
     void add_column(Column* col, String* name) {
       // Column* copy = new Column(col);
-      col_arr->add(col->copy());
+      col_arr->push_back(col->copy());
       schema_->add_column(col->get_type(), name->clone());
     }
 
     /** Return the value at the given column and row. Accessing rows or
      *  columns out of bounds, or request the wrong type is undefined.*/
     int get_int(size_t col, size_t row) {
-      IntColumn* int_col = static_cast<IntColumn*>(col_arr->get(col));
+      IntColumn* int_col = static_cast<IntColumn*>(col_arr->at(col));
       return int_col->get(row);
     }
 
     bool get_bool(size_t col, size_t row) {
-      BoolColumn* bool_col = static_cast<BoolColumn*>(col_arr->get(col));
+      BoolColumn* bool_col = static_cast<BoolColumn*>(col_arr->at(col));
       return bool_col->get(row);
     }
     
     float get_float(size_t col, size_t row) {
-      FloatColumn* float_col = static_cast<FloatColumn*>(col_arr->get(col));
+      FloatColumn* float_col = static_cast<FloatColumn*>(col_arr->at(col));
       return float_col->get(row);
     }
     
     String* get_string(size_t col, size_t row) {
-      StringColumn* string_col = static_cast<StringColumn*>(col_arr->get(col));
+      StringColumn* string_col = static_cast<StringColumn*>(col_arr->at(col));
       return string_col->get(row);
     }
   
@@ -119,22 +119,22 @@ public:
       * If the column is not of the right type or the indices are out of
       * bound, the result is undefined. */
     void set(size_t col, size_t row, int val) {
-      IntColumn* int_col = static_cast<IntColumn*>(col_arr->get(col));
+      IntColumn* int_col = static_cast<IntColumn*>(col_arr->at(col));
       int_col->set(row, val);
     }
 
     void set(size_t col, size_t row, bool val) {
-      BoolColumn* bool_col = static_cast<BoolColumn*>(col_arr->get(col));
+      BoolColumn* bool_col = static_cast<BoolColumn*>(col_arr->at(col));
       bool_col->set(row, val);
     }
 
     void set(size_t col, size_t row, float val) {
-      FloatColumn* float_col = static_cast<FloatColumn*>(col_arr->get(col));
+      FloatColumn* float_col = static_cast<FloatColumn*>(col_arr->at(col));
       float_col->set(row, val);
     }
 
     void set(size_t col, size_t row, String* val) {
-      StringColumn* string_col = static_cast<StringColumn*>(col_arr->get(col));
+      StringColumn* string_col = static_cast<StringColumn*>(col_arr->at(col));
       string_col->set(row, val);
     }
 
@@ -144,26 +144,26 @@ public:
       * dataframe, results are undefined.
       */
     void fill_row(size_t idx, Row& row) {
-      for (int i = 0; i < col_arr->get_len(); i++) {
+      for (int i = 0; i < col_arr->size(); i++) {
         char t = schema_->col_type(i);
         switch (t) {
           case 'S': {
-            StringColumn* string_col = col_arr->get(i)->as_string();
+            StringColumn* string_col = col_arr->at(i)->as_string();
             row.set(i, string_col->get(idx));
             break;
           }
           case 'B': {
-            BoolColumn* bool_col = col_arr->get(i)->as_bool();
+            BoolColumn* bool_col = col_arr->at(i)->as_bool();
             row.set(i, bool_col->get(idx));
             break;
           }
           case 'I': {
-            IntColumn* int_col = col_arr->get(i)->as_int();
+            IntColumn* int_col = col_arr->at(i)->as_int();
             row.set(i, int_col->get(idx));
             break;
           }
           case 'F': {
-            FloatColumn* float_col = col_arr->get(i)->as_float();
+            FloatColumn* float_col = col_arr->at(i)->as_float();
             row.set(i, float_col->get(idx));
             break;
           }
@@ -177,20 +177,24 @@ public:
      *  the right schema and be filled with values, otherwise undefined.  */
     void add_row(Row& row) {
 
-      for (int i = 0; i < col_arr->get_len(); i++) {
+      for (int i = 0; i < col_arr->size(); i++) {
         char t = schema_->col_type(i);
         switch (t) {
           case 'S': 
-            col_arr->get(i)->push_back(row.get_string(i));
+            // printf("trying to string col push: %s\n", row.get_string(i)->c_str());
+            col_arr->at(i)->as_string()->push_back(row.get_string(i));
             break;
           case 'B': 
-            col_arr->get(i)->push_back(row.get_bool(i));
+            // printf("trying to bool col push: %d\n", row.get_bool(i));
+            col_arr->at(i)->as_bool()->push_back(row.get_bool(i));
             break;
           case 'I': 
-            col_arr->get(i)->push_back(row.get_int(i));
+            // printf("trying to int col push: %d\n", row.get_int(i));
+            col_arr->at(i)->as_int()->push_back(row.get_int(i));
             break;
           case 'F': 
-            col_arr->get(i)->push_back(row.get_float(i));
+            // printf("trying to float col push: %f\n", row.get_float(i));
+            col_arr->at(i)->as_float()->push_back(row.get_float(i));
             break;
           default:
             exit(1);

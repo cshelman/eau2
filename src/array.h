@@ -137,7 +137,7 @@ class Array : public Object {
 
         for (int i = 0; i < cap; i++) {
           if (i < cap/2) {
-            longer[i] = lobj[i];            
+            longer[i] = lobj[i];
           } else {
             longer[i] = new Object*[inner_size];
             for (int j = 0; j < inner_size; j++) {

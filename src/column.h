@@ -3,7 +3,10 @@
 #include "string.h"
 #include "object.h"
 #include <cstdarg>
+#include <vector>
 #include "array.h"
+
+using namespace std;
 
 class IntColumn;
 class StringColumn;
@@ -26,7 +29,7 @@ public:
         return nullptr;
     }
 
-    virtual BoolColumn*  as_bool() {
+    virtual BoolColumn* as_bool() {
         return nullptr;
     }
 
@@ -41,22 +44,22 @@ public:
     /** Type appropriate push_back methods. Calling the wrong method is
       * undefined behavior. **/
     virtual void push_back(int val) {
-        printf("invalid push back");
+        printf("invalid int push back\n");
         exit(1);
     }
 
     virtual void push_back(bool val) {
-        printf("invalid push back");
+        printf("invalid bool push back\n");
         exit(1);
     }
 
     virtual void push_back(float val) {
-        printf("invalid push back");
+        printf("invalid float push back\n");
         exit(1);
     }
 
     virtual void push_back(String* val) {
-        printf("invalid push back");
+        printf("invalid val push back\n");
         exit(1);
     }
 
@@ -77,27 +80,27 @@ public:
  */
 class IntColumn : public Column {
 public:
-    IntArray* arr;
+    vector<int>* arr;
 
     IntColumn(IntColumn* col) {
         type = col->type;
-        arr = col->arr->copy();
+        arr = col->arr;
     }
 
     IntColumn() {
         type = 'I';
-        arr = new IntArray();
+        arr = new vector<int>();
     }
 
     IntColumn(int n, ...) {
         type = 'I';
-        arr = new IntArray();
+        arr = new vector<int>();
 
         va_list args;
         va_start(args, n);
 
         for (int i = 0; i < n; i++) {
-            push_back(va_arg(args, int));
+            arr->push_back(va_arg(args, int));
         }
 
         va_end(args);
@@ -108,24 +111,24 @@ public:
     }
 
     int get(size_t idx) {
-        return *arr->get(idx);
-    }
-
-    void push_back(int val) {
-        arr->add(&val);
+        return arr->at(idx);
     }
 
     IntColumn* as_int() {
         return this;
     }
 
+    void push_back(int val) {
+        arr->push_back(val);
+    }
+
     /** Set value at idx. An out of bound idx is undefined.  */
     void set(size_t idx, int val) {
-        arr->set(&val, idx);
+        arr->at(idx) = val;
     }
 
     size_t size() {
-        return arr->get_len();
+        return arr->size();
     }
 
     Column* copy() {
@@ -140,27 +143,27 @@ public:
  */
 class FloatColumn : public Column {
 public:
-    FloatArray* arr;
+    vector<float>* arr;
 
     FloatColumn(FloatColumn* col) {
         type = col->type;
-        arr = col->arr->copy();
+        arr = col->arr;
     }
 
     FloatColumn() {
         type = 'F';
-        arr = new FloatArray();
+        arr = new vector<float>();
     }
 
     FloatColumn(int n, ...) {
         type = 'F';
-        arr = new FloatArray();
+        arr = new vector<float>();
 
         va_list args;
         va_start(args, n);
 
         for (int i = 0; i < n; i++) {
-            push_back(va_arg(args, float));
+            arr->push_back(va_arg(args, float));
         }
 
         va_end(args);
@@ -171,24 +174,24 @@ public:
     }
 
     float get(size_t idx) {
-        return *(arr->get(idx));
-    }
-
-    void push_back(float val) {
-        arr->add(&val);
+        return arr->at(idx);
     }
 
     FloatColumn* as_float() {
         return this;
     }
 
+    void push_back(float val) {
+        arr->push_back(val);
+    }
+
     /** Set value at idx. An out of bound idx is undefined.  */
     void set(size_t idx, float val) {
-        arr->set(&val, idx);
+        arr->at(idx) = val;
     }
 
     size_t size() {
-        return arr->get_len();
+        return arr->size();
     }
 
     Column* copy() {
@@ -203,27 +206,27 @@ public:
  */
 class BoolColumn : public Column {
 public:
-    BoolArray* arr;
+    vector<bool>* arr;
 
     BoolColumn(BoolColumn* col) {
         type = col->type;
-        arr = col->arr->copy();
+        arr = col->arr;
     }
 
     BoolColumn() {
         type = 'B';
-        arr = new BoolArray();
+        arr = new vector<bool>();
     }
 
     BoolColumn(int n, ...) {
         type = 'B';
-        arr = new BoolArray();
+        arr = new vector<bool>();
 
         va_list args;
         va_start(args, n);
 
         for (int i = 0; i < n; i++) {
-            push_back(va_arg(args, bool));
+            arr->push_back(va_arg(args, bool));
         }
 
         va_end(args);
@@ -233,12 +236,12 @@ public:
         delete arr;
     }
 
-    bool get(size_t idx) {
-        return *(arr->get(idx));
+    void push_back(bool val) {
+        arr->push_back(val);
     }
 
-    void push_back(bool val) {
-        arr->add(&val);
+    bool get(size_t idx) {
+        return arr->at(idx);
     }
 
     BoolColumn* as_bool() {
@@ -247,11 +250,11 @@ public:
 
     /** Set value at idx. An out of bound idx is undefined.  */
     void set(size_t idx, bool val) {
-        arr->set(&val, idx);
+        arr->at(idx) = val;
     }
 
     size_t size() {
-        return arr->get_len();
+        return arr->size();
     }
 
     Column* copy() {
@@ -267,28 +270,28 @@ public:
  */
 class StringColumn : public Column {
 public:
-    StringArray* arr;
+    vector<String*>* arr;
 
     StringColumn(StringColumn* col) {
         type = col->type;
-        arr = col->arr->copy();
+        arr = col->arr;
     }
 
     StringColumn() {
         type = 'S';
-        arr = new StringArray();
+        arr = new vector<String*>();
     }
 
     StringColumn(int n, ...) {
         type = 'S';
-        arr = new StringArray();
+        arr = new vector<String*>();
 
         va_list args;
         va_start(args, n);
 
         for (int i = 0; i < n; i++) {
             String* s = new String(va_arg(args, String*)->c_str());
-            push_back(s);
+            arr->push_back(s);
         }
 
         va_end(args);
@@ -302,22 +305,22 @@ public:
         return this;
     }
 
-    /** Returns the string at idx; undefined on invalid idx.*/
-    String* get(size_t idx) {
-        return arr->get(idx);
+    void push_back(String* val) {
+        arr->push_back(val);
     }
 
-    void push_back(String* val) {
-        arr->add(val);
+    /** Returns the string at idx; undefined on invalid idx.*/
+    String* get(size_t idx) {
+        return arr->at(idx);
     }
 
     /** Acquire ownership fo the string.  Out of bound idx is undefined. */
     void set(size_t idx, String* val) {
-        arr->set(val, idx);
+        arr->at(idx) = val;
     }
 
     size_t size() {
-        return arr->get_len();
+        return arr->size();
     }
 
     Column* copy() {
@@ -329,151 +332,151 @@ public:
 /**
  * ColumnArray: represents a resizable array of objects.
  */
-class ColumnArray : public Object {
-  public:
-    Column*** loc;
-    size_t cap;
-    size_t inner_size;
-    size_t size;
+// class ColumnArray : public Object {
+//   public:
+//     Column*** loc;
+//     size_t cap;
+//     size_t inner_size;
+//     size_t size;
 
-    ColumnArray(ColumnArray* col_arr) {
-      cap = col_arr->cap;
-      size = 0;
-      inner_size = col_arr->inner_size;
-      loc = new Column**[cap];
+//     ColumnArray(ColumnArray* col_arr) {
+//       cap = col_arr->cap;
+//       size = 0;
+//       inner_size = col_arr->inner_size;
+//       loc = new Column**[cap];
       
-      for (int i = 0; i < cap; i++) {
-        loc[i] = new Column*[inner_size];
-      }
+//       for (int i = 0; i < cap; i++) {
+//         loc[i] = new Column*[inner_size];
+//       }
 
-      for (int i = 0; i < cap * inner_size; i++) {
-        size_t outer_idx = i / inner_size;
-        size_t inner_idx = i % inner_size;
-        loc[outer_idx][inner_idx] = NULL;
-      }
+//       for (int i = 0; i < cap * inner_size; i++) {
+//         size_t outer_idx = i / inner_size;
+//         size_t inner_idx = i % inner_size;
+//         loc[outer_idx][inner_idx] = NULL;
+//       }
 
-      for(int i = 0; i < col_arr->get_len(); i++) {
-        Column* copy = col_arr->get(i)->copy();
-        add(copy);
-      }
-    }
+//       for(int i = 0; i < col_arr->get_len(); i++) {
+//         Column* copy = col_arr->get(i)->copy();
+//         add(copy);
+//       }
+//     }
 
-    /**
-     * Constructs a new empty array.
-     */
-    ColumnArray() : Object() {
-      cap = 4;
-      size = 0;
-      inner_size = 100;
-      loc = new Column**[cap];
+//     /**
+//      * Constructs a new empty array.
+//      */
+//     ColumnArray() : Object() {
+//       cap = 4;
+//       size = 0;
+//       inner_size = 100;
+//       loc = new Column**[cap];
       
-      for (int i = 0; i < cap; i++) {
-          loc[i] = new Column*[inner_size];
-      }
+//       for (int i = 0; i < cap; i++) {
+//           loc[i] = new Column*[inner_size];
+//       }
 
-      for (int i = 0; i < cap * inner_size; i++) {
-        size_t outer_idx = i / inner_size;
-        size_t inner_idx = i % inner_size;
-        loc[outer_idx][inner_idx] = NULL;
-      }
-    }
+//       for (int i = 0; i < cap * inner_size; i++) {
+//         size_t outer_idx = i / inner_size;
+//         size_t inner_idx = i % inner_size;
+//         loc[outer_idx][inner_idx] = NULL;
+//       }
+//     }
 
-    /**
-     * Default destructor.
-     */
-    ~ColumnArray() {
-      for(int i = 0; i < cap; i++) {
-        for(int j = 0; j < inner_size; j++) {
-          delete loc[i][j];
-        }
-        delete[] loc[i];
-      }
-      delete[] loc;
-      cap = 0;
-      size = 0;
-    }
+//     /**
+//      * Default destructor.
+//      */
+//     ~ColumnArray() {
+//       for(int i = 0; i < cap; i++) {
+//         for(int j = 0; j < inner_size; j++) {
+//           delete loc[i][j];
+//         }
+//         delete[] loc[i];
+//       }
+//       delete[] loc;
+//       cap = 0;
+//       size = 0;
+//     }
 
-    /**
-     * Returns the length of this Array.
-     */
-    virtual size_t get_len() {
-      return size;
-    }
+//     /**
+//      * Returns the length of this Array.
+//      */
+//     virtual size_t get_len() {
+//       return size;
+//     }
 
-    /**
-     * Returns the value stored at index i in this Array.
-     * If the given i is < 0 or >= than the length, a nullptr is returned.
-     */
-    virtual Column* get(size_t i) {
-      if (i >= size) return nullptr;
+//     /**
+//      * Returns the value stored at index i in this Array.
+//      * If the given i is < 0 or >= than the length, a nullptr is returned.
+//      */
+//     virtual Column* get(size_t i) {
+//       if (i >= size) return nullptr;
       
-      // integer division should truncate this
-      size_t outer_idx = i / inner_size;
-      size_t inner_idx = i % inner_size;
-      return loc[outer_idx][inner_idx];
-    }
+//       // integer division should truncate this
+//       size_t outer_idx = i / inner_size;
+//       size_t inner_idx = i % inner_size;
+//       return loc[outer_idx][inner_idx];
+//     }
 
-    /**
-     * Sets the given Object o at index i in this Array.
-     * Returns success or failure
-     */
-    virtual bool set(Column* o, size_t i) {
-      if (i >= size) return false;
+//     /**
+//      * Sets the given Object o at index i in this Array.
+//      * Returns success or failure
+//      */
+//     virtual bool set(Column* o, size_t i) {
+//       if (i >= size) return false;
       
-      // integer division should truncate this
-      size_t outer_idx = i / inner_size;
-      size_t inner_idx = i % inner_size;
-      loc[outer_idx][inner_idx] = o;
+//       // integer division should truncate this
+//       size_t outer_idx = i / inner_size;
+//       size_t inner_idx = i % inner_size;
+//       loc[outer_idx][inner_idx] = o;
 
-      return true;
-    }
+//       return true;
+//     }
 
-    /**
-     * Determines if this Array is equal to a given Object o.
-     */
-    virtual bool equals(Object* o) {
-      ColumnArray* a = dynamic_cast<ColumnArray*>(o);
-      if (a == nullptr) return false;
-      if (get_len() != a->get_len()) return false;
+//     /**
+//      * Determines if this Array is equal to a given Object o.
+//      */
+//     virtual bool equals(Object* o) {
+//       ColumnArray* a = dynamic_cast<ColumnArray*>(o);
+//       if (a == nullptr) return false;
+//       if (get_len() != a->get_len()) return false;
 
-      for (int i = 0; i < get_len(); i++) {
-        if (!get(i)->equals(a->get(i))) return false;
-      }
+//       for (int i = 0; i < get_len(); i++) {
+//         if (!get(i)->equals(a->get(i))) return false;
+//       }
 
-      return true;
-    }
+//       return true;
+//     }
 
-    /**
-    * Adds the given object o at the end of the array.
-    */
-    virtual void add(Column* o) {
-      if (get_len() >= cap * inner_size) {
-        cap *= 2;
-        Column*** longer = new Column**[cap];
+//     /**
+//     * Adds the given object o at the end of the array.
+//     */
+//     virtual void add(Column* o) {
+//       if (get_len() >= cap * inner_size) {
+//         cap *= 2;
+//         Column*** longer = new Column**[cap];
 
-        for (int i = 0; i < cap; i++) {
-          if (i < cap/2) {
-            longer[i] = loc[i];            
-          } else {
-            longer[i] = new Column*[inner_size];
-            for (int j = 0; j < inner_size; j++) {
-              longer[i][j] = NULL;
-            }
-          }
-        }
+//         for (int i = 0; i < cap; i++) {
+//           if (i < cap/2) {
+//             longer[i] = loc[i];            
+//           } else {
+//             longer[i] = new Column*[inner_size];
+//             for (int j = 0; j < inner_size; j++) {
+//               longer[i][j] = NULL;
+//             }
+//           }
+//         }
 
-        //memcpy(longer, loi, (cap/2) * sizeof(int**));
+//         //memcpy(longer, loi, (cap/2) * sizeof(int**));
         
-        //free memory
-        delete[] loc;
+//         //free memory
+//         delete[] loc;
 
-        loc = longer;
-      }
-      // integer division should truncate this
-      size_t outer_idx = get_len() / inner_size;
-      size_t inner_idx = get_len() % inner_size;
-      loc[outer_idx][inner_idx] = o;
+//         loc = longer;
+//       }
+//       // integer division should truncate this
+//       size_t outer_idx = get_len() / inner_size;
+//       size_t inner_idx = get_len() % inner_size;
+//       loc[outer_idx][inner_idx] = o;
 
-      size++;
-    }
-};
+//       size++;
+//     }
+// };

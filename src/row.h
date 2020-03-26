@@ -1,9 +1,12 @@
 #pragma once
 
+#include <vector>
 #include "object.h"
 #include "string.h"
 #include "array.h"
 #include "schema.h"
+
+using namespace std;
 
 /*****************************************************************************
  * Fielder::
@@ -51,27 +54,27 @@ public:
 class Row : public Object {
 public:
 
-    StringArray* types_;
-    IntArray* int_arr;
-    BoolArray* bool_arr;
-    FloatArray* float_arr;
-    StringArray* string_arr;
+    vector<String*>* types_;
+    vector<int*>* int_arr;
+    vector<bool*>* bool_arr;
+    vector<float*>* float_arr;
+    vector<String*>* string_arr;
     size_t row_index;
 
     /** Build a row following a schema. */
     Row(Schema& scm) {
-      types_ = new StringArray(scm.types_);
+      types_ = scm.types_;
       
-      int_arr = new IntArray();
-      bool_arr = new BoolArray();
-      float_arr = new FloatArray();
-      string_arr = new StringArray();
+      int_arr = new vector<int*>();
+      bool_arr = new vector<bool*>();
+      float_arr = new vector<float*>();
+      string_arr = new vector<String*>();
 
-      for(int i = 0; i < scm.types_->get_len(); i++) {
-        int_arr->add(nullptr);
-        bool_arr->add(nullptr);
-        float_arr->add(nullptr);
-        string_arr->add(nullptr);
+      for(int i = 0; i < scm.types_->size(); i++) {
+        int_arr->push_back(nullptr);
+        bool_arr->push_back(nullptr);
+        float_arr->push_back(nullptr);
+        string_arr->push_back(nullptr);
       }
     }
 
@@ -87,20 +90,23 @@ public:
     /** Setters: set the given column with the given value. Setting a column with
       * a value of the wrong type is undefined. */
     void set(size_t col, int val) {
-      int_arr->set(&val, col);
+      int* new_int = new int(val);
+      int_arr->at(col) = new_int;
     }
 
     void set(size_t col, float val) {
-      float_arr->set(&val, col);
+      float* new_float = new float(val);
+      float_arr->at(col) = new_float;
     }
 
     void set(size_t col, bool val) {
-      bool_arr->set(&val, col);
+      bool* new_bool = new bool(val);
+      bool_arr->at(col) = new_bool;
     }
 
     /** Acquire ownership of the string. */
     void set(size_t col, String* val) {
-      string_arr->set(val, col);
+      string_arr->at(col) = val->clone();
     }
 
     /** Set/get the index of this row (ie. its position in the dataframe. This is
@@ -116,29 +122,29 @@ public:
     /** Getters: get the value at the given column. If the column is not
       * of the requested type, the result is undefined. */
     int get_int(size_t col) {
-      return *int_arr->get(col);
+      return *(int_arr->at(col));
     }
 
     bool get_bool(size_t col) {
-      return *bool_arr->get(col);
+      return *(bool_arr->at(col));
     }
 
     float get_float(size_t col) {
-      return *float_arr->get(col);
+      return *(float_arr->at(col));
     }
 
     String* get_string(size_t col) {
-      return string_arr->get(col);
+      return string_arr->at(col);
     }
 
     /** Number of fields in the row. */
     size_t width() {
-      return types_->get_len();
+      return types_->size();
     }
 
      /** Type of the field at the given position. An idx >= width is  undefined. */
     char col_type(size_t idx) {
-      return types_->get(idx)->at(0);
+      return types_->at(idx)->at(0);
     }
 
     /** Given a Fielder, visit every field of this row. The first argument is
@@ -146,14 +152,14 @@ public:
       * Calling this method before the row's fields have been set is undefined. */
     void visit(size_t idx, Fielder& f) {
       f.start(idx);
-      for(int i = 0; i < types_->get_len(); i++) {
-        if(types_->get(i)->at(0) == 'I') {
+      for(int i = 0; i < types_->size(); i++) {
+        if(types_->at(i)->at(0) == 'I') {
           f.accept(this->get_int(i));
-        } else if(types_->get(i)->at(0) == 'S') {
+        } else if(types_->at(i)->at(0) == 'S') {
           f.accept(this->get_string(i));
-        } else if(types_->get(i)->at(0) == 'F') {
+        } else if(types_->at(i)->at(0) == 'F') {
           f.accept(this->get_float(i));
-        } else if(types_->get(i)->at(0) == 'B') {
+        } else if(types_->at(i)->at(0) == 'B') {
           f.accept(this->get_bool(i));
         }
       }

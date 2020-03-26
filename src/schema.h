@@ -2,7 +2,7 @@
 
 #include "object.h"
 #include "string.h"
-#include "array.h"
+#include <vector>
 
 /*************************************************************************
  * Schema::
@@ -15,26 +15,26 @@ class Schema : public Object {
 public:
     size_t num_cols_;
     size_t num_rows_;
-    StringArray* types_;
-    StringArray* col_names_;
-    StringArray* row_names_;
+    vector<String*>* types_;
+    vector<String*>* col_names_;
+    vector<String*>* row_names_;
 
     /** Copying constructor */
     Schema(Schema& from) {
         num_cols_ = from.num_cols_;
         num_rows_ = from.num_rows_;
-        types_ = new StringArray(from.types_);
-        col_names_ = new StringArray(from.col_names_);
-        row_names_ = new StringArray(from.row_names_);
+        types_ = from.types_;
+        col_names_ = from.col_names_;
+        row_names_ = from.row_names_;
     }
  
     /** Create an empty schema **/
     Schema() {
         num_cols_ = 0;
         num_rows_ = 0;
-        types_ = new StringArray();
-        col_names_ = new StringArray();
-        row_names_ = new StringArray();
+        types_ = new vector<String*>();
+        col_names_ = new vector<String*>();
+        row_names_ = new vector<String*>();
     }
  
     /** Create a schema from a string of types. A string that contains
@@ -44,14 +44,14 @@ public:
     Schema(const char* types) {
         num_cols_ = strlen(types);
         num_rows_ = 0;
-        types_ = new StringArray();
-        col_names_ = new StringArray();
-        row_names_ = new StringArray();
+        types_ = new vector<String*>();
+        col_names_ = new vector<String*>();
+        row_names_ = new vector<String*>();
 
         for (int i = 0; i < strlen(types); i++) {
             String* str = new String(&types[i], 1);
-            types_->add(str);
-            col_names_->add(nullptr);
+            types_->push_back(str);
+            col_names_->push_back(nullptr);
             delete str;
         }
     }
@@ -68,40 +68,40 @@ public:
     void add_column(char typ, String* name) {
         num_cols_++;
         String* str_typ = new String(&typ, 1);
-        types_->add(str_typ);
-        col_names_->add(name);
+        types_->push_back(str_typ);
+        col_names_->push_back(name);
     }
 
     /** Add a row with a name (possibly nullptr), name is external.  Names are
      *  expectd to be unique, duplicates result in undefined behavior. */
     void add_row(String* name) {
         num_rows_++;
-        row_names_->add(name);
+        row_names_->push_back(name);
     }
  
     /** Return name of row at idx; nullptr indicates no name. An idx >= width
       * is undefined. */
     String* row_name(size_t idx) {
-        return row_names_->get(idx);
+        return row_names_->at(idx);
     }
 
     /** Return name of column at idx; nullptr indicates no name given.
       *  An idx >= width is undefined.*/
     String* col_name(size_t idx) {
-        return col_names_->get(idx);
+        return col_names_->at(idx);
     }
 
     /** Return type of column at idx. An idx >= width is undefined. */
     char col_type(size_t idx) {
-        return types_->get(idx)->at(0);
+        return types_->at(idx)->at(0);
     }
 
     /** Given a column name return its index, or -1. */
     int col_idx(const char* name) {
         if (name != nullptr) {
             String* str_name = new String(name, strlen(name));
-            for (int i = 0; i < col_names_->get_len(); i++) {
-                if (str_name->equals(col_names_->get(i))) {
+            for (int i = 0; i < col_names_->size(); i++) {
+                if (str_name->equals(col_names_->at(i))) {
                     return i;
                 }
             }
@@ -113,8 +113,8 @@ public:
     int row_idx(const char* name) {
         if (name != nullptr) {
             String* str_name = new String(name, strlen(name));
-            for (int i = 0; i < row_names_->get_len(); i++) {
-                if (str_name->equals(row_names_->get(i))) {
+            for (int i = 0; i < row_names_->size(); i++) {
+                if (str_name->equals(row_names_->at(i))) {
                     return i;
                 }
             }
