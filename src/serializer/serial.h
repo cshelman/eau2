@@ -3,9 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "array.h"
 #include "buffer.h"
-#include "message.h"
 
 // Helpers
 void add_tag(const char* tag, char* val, Buffer* buffer) {
@@ -43,8 +41,8 @@ char* get_word(char* s, char open, char close) {
     exit(1);
 }
 
-StringArray* get_components(char* s) {
-    StringArray* components = new StringArray();
+vector<String*>* get_components(char* s) {
+    vector<String*>* components = new vector<String*>();
     bool in_string = false;
     int bracket_count = 0;
     int list_count = 0;
@@ -69,14 +67,14 @@ StringArray* get_components(char* s) {
             char* comp = new char[i - start];
             memcpy(comp, &s[start], i - start);
             String* str = new String(comp, i - start);
-            components->add(str);
+            components->push_back(str);
             start = i + 1;
         }
         if (i >= strlen(s) - 1) {
             char* comp = new char[i - start + 1];
             memcpy(comp, &s[start], i - start + 1);
             String* str = new String(comp, i - start + 1);
-            components->add(str);
+            components->push_back(str);
         }
     }
     return components;
@@ -121,18 +119,65 @@ int deserialize_int(char* s) {
     return atoi(get_word(s, '{', '}'));
 }
 
-void serialize_double(double d, Buffer* buffer) {
-    char* ns = new char[512];
-    sprintf(ns, "%f", d);
-    add_tag("double", ns, buffer);
+void serialize_bool(bool n, Buffer* buffer) {
+    if(n == 0) {
+        char* null = new char[4];
+        strcpy(null, "NULL");
+        add_tag("bool", null, buffer);
+        delete null;
+        return;
+    }
+
+    char* ns = new char[16];
+    sprintf(ns, "%d", n);
+    add_tag("bool", ns, buffer);
 }
 
-double deserialize_double(char* s) {
-    return atof(get_word(s, '{', '}'));
+bool deserialize_bool(char* s) {
+    char* word = get_word(s, '{', '}');
+
+    if(strcmp(word, "NULL") == 0) {
+        return NULL;
+    }
+
+    return atoi(word);
+}
+
+void serialize_float(float f, Buffer* buffer) {
+    if(f == 0) {
+        char* null = new char[4];
+        strcpy(null, "NULL");
+        add_tag("float", null, buffer);
+        delete null;
+        return;
+    }
+
+    char* ns = new char[512];
+    sprintf(ns, "%f", f);
+    add_tag("float", ns, buffer);
+}
+
+float deserialize_float(char* s) {
+    char* word = get_word(s, '{', '}');
+
+    if(strcmp(word, "NULL") == 0) {
+        return NULL;
+    }
+
+    return atof(word);
 }
 
 void serialize_string(String* s, Buffer* buffer) {
+    if(s == nullptr) {
+        char* null = new char[4];
+        strcpy(null, "NULL");
+        add_tag("string", null, buffer);
+        delete null;
+        return;
+    }
+
     Buffer* temp = new Buffer();
+
     serialize_chars(s->c_str(), temp);
     temp->add(",");
     serialize_size_t(s->size(), temp);
@@ -143,217 +188,263 @@ void serialize_string(String* s, Buffer* buffer) {
 }
 
 String* deserialize_string(char* s) {
-    StringArray* components = get_components(get_word(s, '{', '}'));
-    char* val = deserialize_chars(components->get(0)->c_str());
-    int len = deserialize_size_t(components->get(1)->c_str());
+    char* word = get_word(s, '{', '}');
+
+    if(strcmp(word, "NULL") == 0) {
+        return nullptr;
+    }
+
+    vector<String*>* components = get_components(word);
+    char* val = deserialize_chars(components->at(0)->c_str());
+    int len = deserialize_size_t(components->at(1)->c_str());
     String* str = new String(val, len);
     return str;
 }
 
-void serialize_string_array(StringArray* sa, Buffer* buffer) {
+void serialize_string_vector(vector<String*>* vs, Buffer* buffer) {
     Buffer* temp = new Buffer();
-    temp->add("list:[");
-    for (int i = 0; i < sa->get_len(); i++) {
-        serialize_string(sa->get(i), temp);
-        if (i < sa->get_len() - 1) {
-            temp->add(",");
+
+    for(int i = 0; i < vs->size(); i++) {
+        serialize_string(vs->at(i), temp);
+        if(i < vs->size() - 1) {
+            temp->add(", ");
         }
     }
-    temp->add("],");
 
-    serialize_size_t(sa->cap, temp);
-    temp->add(",");
-    serialize_size_t(sa->size, temp);
-
-    add_tag("StringArray", temp->val, buffer);
+    add_tag("StringVector", temp->val, buffer);
     delete temp;
 }
 
-StringArray* deserialize_string_array(char* s) {
-    StringArray* components = get_components(get_word(s, '{', '}'));
-    StringArray* sa = new StringArray();
-    sa->cap = deserialize_size_t(components->get(1)->c_str());
-    sa->size = deserialize_size_t(components->get(2)->c_str());
+vector<String*>* deserialize_string_vector(char* s) {
+    vector<String*>* components = get_components(get_word(s, '{', '}'));
+    vector<String*>* vs = new vector<String*>();
 
-    String** los = new String*[sa->cap];
-    StringArray* list_items = get_components(get_word(components->get(0)->c_str(), '[', ']'));
-    for (int i = 0; i < list_items->get_len(); i++) {
-        los[i] = deserialize_string(list_items->get(i)->c_str());
+    for(int i = 0; i < components->size(); i++) {
+        String* st = deserialize_string(components->at(i)->c_str());
+        vs->push_back(st);
     }
-    sa->los = los;
-    return sa;
+
+    return vs;
 }
 
-void serialize_double_array(DoubleArray* da, Buffer* buffer) {
+void serialize_int_vector(vector<int>* vi, Buffer* buffer) {
     Buffer* temp = new Buffer();
-    temp->add("list:[");
-    for (int i = 0; i < da->get_len(); i++) {
-        serialize_double(da->get(i), temp);
-        if (i < da->get_len() - 1) {
-            temp->add(",");
+
+    for(int i = 0; i < vi->size(); i++) {
+        serialize_int(vi->at(i), temp);
+        if(i < vi->size() - 1) {
+            temp->add(", ");
         }
     }
-    temp->add("],");
 
-    serialize_size_t(da->cap, temp);
-    temp->add(",");
-    serialize_size_t(da->size, temp);
-
-    add_tag("DoubleArray", temp->val, buffer);
+    add_tag("IntVector", temp->val, buffer);
     delete temp;
 }
 
-DoubleArray* deserialize_double_array(char* s) {
-    StringArray* components = get_components(get_word(s, '{', '}'));
-    DoubleArray* da = new DoubleArray();
-    da->cap = deserialize_size_t(components->get(1)->c_str());
-    da->size = deserialize_size_t(components->get(2)->c_str());
+vector<int>* deserialize_int_vector(char* s) {
+    vector<String*>* components = get_components(get_word(s, '{', '}'));
+    vector<int>* vi = new vector<int>();
 
-    double* lod = new double[da->cap];
-    StringArray* list_items = get_components(get_word(components->get(0)->c_str(), '[', ']'));
-    for (int i = 0; i < list_items->get_len(); i++) {
-        lod[i] = deserialize_double(list_items->get(i)->c_str());
+    for(int i = 0; i < components->size(); i++) {
+        int val = deserialize_int(components->at(i)->c_str());
+        vi->push_back(val);
     }
-    da->lod = lod;
-    return da;
+
+    return vi;
 }
 
-void serialize_msg_kind(MsgKind mk, Buffer* buffer) {
-    char* ns = new char[4];
-    sprintf(ns, "%d", static_cast<int>(mk));
-    add_tag("MsgKind", ns, buffer);
-}
-
-MsgKind deserialize_msg_kind(char* s) {
-    MsgKind mk = (MsgKind)atoi(get_word(s, '{', '}'));
-    return mk;
-}
-
-void serialize_sockaddr_in(struct sockaddr_in sa, Buffer* buffer) {
+void serialize_float_vector(vector<float>* vf, Buffer* buffer) {
     Buffer* temp = new Buffer();
-    serialize_int((int)sa.sin_family, temp);
-    temp->add(",");
-    serialize_int((int)sa.sin_port, temp);
-    temp->add(",");
-    serialize_size_t(sa.sin_addr.s_addr, temp);
 
-    add_tag("sockaddr_in", temp->val, buffer);
+    for(int i = 0; i < vf->size(); i++) {
+        serialize_float(vf->at(i), temp);
+        if(i < vf->size() - 1) {
+            temp->add(", ");
+        }
+    }
+
+    add_tag("FloatVector", temp->val, buffer);
+    delete temp;
 }
 
-struct sockaddr_in deserialize_sockaddr_in(char* s) {
-    StringArray* components = get_components(get_word(s, '{', '}'));
+vector<float>* deserialize_float_vector(char* s) {
+    vector<String*>* components = get_components(get_word(s, '{', '}'));
+    vector<float>* vf = new vector<float>();
+
+    for(int i = 0; i < components->size(); i++) {
+        float f = deserialize_float(components->at(i)->c_str());
+        vf->push_back(f);
+    }
+
+    return vf;
+}
+
+void serialize_bool_vector(vector<bool>* vb, Buffer* buffer) {
+    Buffer* temp = new Buffer();
+
+    for(int i = 0; i < vb->size(); i++) {
+        serialize_bool(vb->at(i), temp);
+        if(i < vb->size() - 1) {
+            temp->add(", ");
+        }
+    }
+
+    add_tag("BoolVector", temp->val, buffer);
+    delete temp;
+}
+
+vector<bool>* deserialize_bool_vector(char* s) {
+    vector<String*>* components = get_components(get_word(s, '{', '}'));
+    vector<bool>* vb = new vector<bool>();
+
+    for(int i = 0; i < components->size(); i++) {
+        bool b = deserialize_bool(components->at(i)->c_str());
+        vb->push_back(b);
+    }
+
+    return vb;
+}
+
+void serialize_column(Column* c, Buffer* buffer) {
+    Buffer* temp = new Buffer();
+
+    if(c->get_type() == 'I') {
+        serialize_int_vector(dynamic_cast<IntColumn*>(c)->arr, temp);
+    } else if(c->get_type() == 'F') {
+        serialize_float_vector(dynamic_cast<FloatColumn*>(c)->arr, temp);
+    } else if(c->get_type() == 'S') {
+        serialize_string_vector(dynamic_cast<StringColumn*>(c)->arr, temp);
+    } else if(c->get_type() == 'B') {
+        serialize_bool_vector(dynamic_cast<BoolColumn*>(c)->arr, temp);
+    }
+
+    add_tag("Column", temp->val, buffer);
+    delete temp;
+}
+
+Column* deserialize_column(char* s) {
+    char* col_str = get_word(s, '{', '}');
+
+    char type[strlen(col_str)];
+    char *colon;
+    strcpy(type, col_str);
+    colon = strchr(type, ':');
+    if (colon != 0)
+        *colon = 0;
+
+    if(strcmp(type, "IntVector") == 0) {
+        IntColumn* ic = new IntColumn();
+        vector<int>* vi = deserialize_int_vector(col_str);
+        ic->arr = vi;
+        return ic;
+    } else if(strcmp(type, "FloatVector") == 0) {
+        FloatColumn* fc = new FloatColumn();
+        vector<float>* vf = deserialize_float_vector(col_str);
+        fc->arr = vf;
+        return fc;
+    } else if(strcmp(type, "BoolVector") == 0) {
+        BoolColumn* bc = new BoolColumn();
+        vector<bool>* vb = deserialize_bool_vector(col_str);
+        bc->arr = vb;
+        return bc;
+    } else if(strcmp(type, "StringVector") == 0) {
+        StringColumn* sc = new StringColumn();
+        vector<String*>* vs = deserialize_string_vector(col_str);
+        sc->arr = vs;
+        return sc;
+    }
+}
+
+void serialize_col_vector(vector<Column*>* vc, Buffer* buffer) {
+    Buffer* temp = new Buffer();
+
+    for(int i = 0; i < vc->size(); i++) {
+        serialize_column(vc->at(i), temp);
+        if(i < vc->size() - 1) {
+            temp->add(", ");
+        }
+    }
+
+    add_tag("ColumnVector", temp->val, buffer);
+    delete temp;
+}
+
+vector<Column*>* deserialize_col_vector(char* s) {
+    vector<String*>* components = get_components(get_word(s, '{', '}'));
+    vector<Column*>* vc = new vector<Column*>();
+
+    for(int i = 0; i < components->size(); i++) {
+        Column* c = deserialize_column(components->at(i)->c_str());
+        vc->push_back(c);
+    }
+
+    return vc;
+}
+
+void serialize_schema(Schema* s, Buffer* buffer) {
+    Buffer* temp = new Buffer();
+
+    serialize_size_t(s->num_cols_, temp);
+    temp->add(", ");
+
+    serialize_size_t(s->num_rows_, temp);
+    temp->add(", ");
+
+    serialize_string_vector(s->types_, temp);
+    temp->add(", ");
+
+    serialize_string_vector(s->col_names_, temp);
+    temp->add(", ");
+
+    serialize_string_vector(s->row_names_, temp);
     
-    struct sockaddr_in ret;
-    ret.sin_family = (short)deserialize_int(components->get(0)->c_str());
-    ret.sin_port = (short)deserialize_int(components->get(1)->c_str());
-    struct in_addr ia;
-    ia.s_addr = (unsigned long)deserialize_size_t(components->get(2)->c_str());
-    ret.sin_addr = ia;
-
-    return ret;
+    add_tag("Schema", temp->val, buffer);
+    delete temp;
 }
 
-void serialize_message(Message* m, Buffer* buffer) {
+Schema* deserialize_schema(char* s) {
+    vector<String*>* components = get_components(get_word(s, '{', '}'));
+
+    size_t num_cols = deserialize_size_t(components->at(0)->c_str());
+    size_t num_rows = deserialize_size_t(components->at(1)->c_str());
+
+    vector<String*>* types = deserialize_string_vector(components->at(2)->c_str());
+    vector<String*>* col_names = deserialize_string_vector(components->at(3)->c_str());
+    vector<String*>* row_names = deserialize_string_vector(components->at(4)->c_str());
+
+    Schema* sc = new Schema();
+
+    sc->num_cols_ = num_cols;
+    sc->num_rows_ = num_rows;
+    sc->types_ = types;
+    sc->col_names_ = col_names;
+    sc->row_names_ = row_names;
+
+    return sc;
+}
+
+void serialize_dataframe(DataFrame* df, Buffer* buffer) {
     Buffer* temp = new Buffer();
-    serialize_msg_kind(m->kind_, temp);
-    temp->add(",");
-    serialize_size_t(m->sender_, temp);
-    temp->add(",");
-    serialize_size_t(m->target_, temp);
-    temp->add(",");
-    serialize_size_t(m->id_, temp);
 
-    if (m->kind_ == MsgKind::Status) {
-        Status* ms = dynamic_cast<Status*>(m);
-        if (ms == nullptr) {
-            printf("wrong message type\n");
-        }
-        temp->add(",");
-        serialize_string(ms->msg_, temp);
-    }
-    else if (m->kind_ == MsgKind::Register) {
-        Register* ms = dynamic_cast<Register*>(m);
-        if (ms == nullptr) {
-            printf("wrong message type\n");
-        }
-        temp->add(",");
-        serialize_sockaddr_in(ms->slave_, temp);
-        temp->add(",");
-        serialize_size_t(ms->port_, temp);
-    }
-    else if (m->kind_ == MsgKind::Directory) {
-        Directory* ms = dynamic_cast<Directory*>(m);
-        if (ms == nullptr) {
-            printf("wrong message type\n");
-        }
-        temp->add(",");
-        serialize_size_t(ms->slaves_, temp);
-        temp->add(",");
+    serialize_schema(df->schema_, temp);
+    temp->add(", ");
 
-        temp->add("list:[");
-        int portlen = ms->slaves_;
-        for (int i = 0; i < portlen; i++) {
-            serialize_size_t(ms->ports_[i], temp);
-            if (i < portlen - 1) {
-                temp->add(",");
-            }
-        }
-        temp->add("],");
-
-        temp->add("list:[");
-        int addrlen = ms->slaves_;
-        for (int i = 0; i < addrlen; i++) {
-            serialize_string(ms->addresses_[i], temp);
-            if (i < addrlen - 1) {
-                temp->add(",");
-            }
-        }
-        temp->add("]");
-    }
-
-    add_tag("Message", temp->val, buffer);
+    serialize_col_vector(df->col_arr, temp);
+    
+    add_tag("DataFrame", temp->val, buffer);
+    delete temp;
 }
 
-Message* deserialize_message(char* s) {
-    StringArray* components = get_components(get_word(s, '{', '}'));
-    MsgKind kind = deserialize_msg_kind(components->get(0)->c_str());
-    size_t sender = deserialize_size_t(components->get(1)->c_str());
-    size_t target = deserialize_size_t(components->get(2)->c_str());
-    size_t id = deserialize_size_t(components->get(3)->c_str());
+DataFrame* deserialize_dataframe(char* s) {
+    vector<String*>* components = get_components(get_word(s, '{', '}'));
 
-    if (kind == MsgKind::Status) {
-        Status* status_message = new Status(kind, sender, target, id);
-        status_message->set_message(deserialize_string(components->get(4)->c_str()));
-        return status_message;
-    }
-    else if (kind == MsgKind::Register) {
-        Register* register_message = new Register(kind, sender, target, id);
-        register_message->set_slave(deserialize_sockaddr_in(components->get(4)->c_str()));
-        register_message->set_port(deserialize_size_t(components->get(5)->c_str()));
-        return register_message;
-    }
-    else if (kind == MsgKind::Directory) {
-        Directory* directory_message = new Directory(kind, sender, target, id);
-        directory_message->set_slaves(deserialize_size_t(components->get(4)->c_str()));
+    Schema* sc = deserialize_schema(components->at(0)->c_str());
+    vector<Column*>* vc = deserialize_col_vector(components->at(1)->c_str());
+    
+    DataFrame* df = new DataFrame(*sc);
+    delete df->col_arr;
+    df->col_arr = vc;
 
-        size_t* ports = new size_t[directory_message->slaves_];
-        StringArray* port_items = get_components(get_word(components->get(5)->c_str(), '[', ']'));
-        for (int i = 0; i < directory_message->slaves_; i++) {
-            ports[i] = deserialize_size_t(port_items->get(i)->c_str());
-        }
-        directory_message->set_ports(ports);
-
-        String** addresses = new String*[directory_message->slaves_];
-        StringArray* address_items = get_components(get_word(components->get(6)->c_str(), '[', ']'));
-        for (int i = 0; i < directory_message->slaves_; i++) {
-            addresses[i] = deserialize_string(address_items->get(i)->c_str());
-        }
-        directory_message->set_addresses(addresses);
-
-        return directory_message;
-    }
-    else {
-        Message* message = new Message(kind, sender, target, id);
-        return message;
-    }
+    return df;
 }
+

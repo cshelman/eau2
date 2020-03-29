@@ -53,7 +53,6 @@ public:
  */
 class Row : public Object {
 public:
-
     vector<String*>* types_;
     vector<int*>* int_arr;
     vector<bool*>* bool_arr;
@@ -63,7 +62,7 @@ public:
 
     /** Build a row following a schema. */
     Row(Schema& scm) {
-      types_ = scm.types_;
+      types_ = new vector<String*>(*scm.types_);
       
       int_arr = new vector<int*>();
       bool_arr = new vector<bool*>();
@@ -79,7 +78,6 @@ public:
     }
 
     ~Row() {
-      // printf("deleting row++++++++++++++\n");
       delete types_;
       delete int_arr;
       delete bool_arr;

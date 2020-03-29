@@ -16,8 +16,7 @@
  * describes it.
  */
 class DataFrame : public Object {
-public: 
-
+public:
     vector<Column*>* col_arr;
     Schema* schema_;
 

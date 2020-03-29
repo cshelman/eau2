@@ -23,9 +23,9 @@ public:
     Schema(Schema& from) {
         num_cols_ = from.num_cols_;
         num_rows_ = from.num_rows_;
-        types_ = from.types_;
-        col_names_ = from.col_names_;
-        row_names_ = from.row_names_;
+        types_ = new vector<String*>(*from.types_);
+        col_names_ = new vector<String*>(*from.col_names_);
+        row_names_ = new vector<String*>(*from.row_names_);
     }
  
     /** Create an empty schema **/
