@@ -25,11 +25,11 @@ public:
     }
 
     void shutdown() {
-        printf("\tMaster attempting to shutdown network (%ld)...\n", net->num_nodes);
+        // printf("\tMaster attempting to shutdown network (%ld)...\n", net->num_nodes);
         string name = "";
         Message* kill_msg = new Message(MsgType::Kill, new Key(name));
         for (int i = 0; i < net->num_nodes; i++) {
-            printf("\t\tSent kill msg to %d...\n", i);
+            // printf("\t\tSent kill msg to %d...\n", i);
             net->send_msg(i, kill_msg);
         }
     }
@@ -51,14 +51,14 @@ public:
                 }
                 else {
                     buf->add(ret_msg->contents);
-                    printf("contents: %s\n", ret_msg->contents);
+                    //printf("contents: %s\n", ret_msg->contents);
                     delete ret_msg;
                     break;
                 }
             }
         }
         // deserialize the df from bytes and return
-        printf("BUFFER VAL %s\n", buf->val);
+        // printf("BUFFER VAL %s\n", buf->val);
         DataFrame* df = deserialize_dataframe(buf->val);
         delete buf;
         return df;
