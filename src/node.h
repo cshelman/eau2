@@ -35,6 +35,7 @@ public:
             printf("Did not add new value\n");
         }
         else {
+            // why do these have to be casted?
             pairs->insert(make_pair<Key*, char*>((Key*)key, (char*)data));
         }
     }
