@@ -31,11 +31,11 @@ public:
 
     void put(Key* key, char* data) {
         if (pairs->count(key) > 0) {
-            printf("Node already contains key: %s\n", key->name);
+            printf("Node already contains key: %s\n", key->name.c_str());
             printf("Did not add new value\n");
         }
         else {
-            pairs->insert(make_pair<Key*, char*>(key, data));
+            pairs->insert(make_pair<Key*, char*>((Key*)key, (char*)data));
         }
     }
 };
