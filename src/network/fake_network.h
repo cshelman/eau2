@@ -22,12 +22,19 @@ public:
     Message(MsgType t, Key* k) {
         type = t;
         key = k->copy();
+        contents = (char*)"";
     }
 
     Message(MsgType t, Key* k, char* c) {
         type = t;
         key = k->copy();
-        contents = c;
+        contents = new char[strlen(c) + 1];
+        strcpy(contents, c);
+    }
+
+    ~Message() {
+        delete contents;
+        delete key;
     }
 
     Message* copy() {
@@ -47,16 +54,22 @@ public:
 
     void push(Message* msg) {
         mtx.lock();
-        mq.push(msg->copy());
+        mq.push(msg);
         mtx.unlock();
     }
 
+    // returns nullptr when the queue is empty;
     Message* pop() {
-        mtx.lock();
-        Message* ret = mq.front();
-        mq.pop();
-        mtx.unlock();
-        return ret;
+        if (mq.size() > 0) {
+            mtx.lock();
+            Message* ret = mq.front();
+            mq.pop();
+            mtx.unlock();
+            return ret;
+        }
+        else {
+            return nullptr;
+        }
     }
 };
 
@@ -80,18 +93,20 @@ public:
     }
 
     void send_msg(size_t dest, Message* msg) {
-        qs->at(dest)->push(msg);
+        Message* temp = msg->copy();
+        qs->at(dest)->push(temp);
     }
 
     Message* recv_msg(size_t node) {
-        qs->at(node)->pop();
+        return qs->at(node)->pop();
     }
 
     void send_master(Message* msg) {
+        Message* temp = msg->copy();
         master_queue->push(msg);
     }
 
     Message* recv_master() {
-        master_queue->pop();
+        return master_queue->pop();
     }
 };

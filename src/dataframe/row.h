@@ -1,9 +1,7 @@
 #pragma once
 
 #include <vector>
-#include "object.h"
-#include "string.h"
-#include "array.h"
+#include "../string.h"
 #include "schema.h"
 
 using namespace std;
@@ -12,7 +10,7 @@ using namespace std;
  * Fielder::
  * A field vistor invoked by Row.
  */
-class Fielder : public Object {
+class Fielder {
 public:
 
     /** Called before visiting a row, the argument is the row offset in the
@@ -51,7 +49,7 @@ public:
  * read/write complete rows. Internally a dataframe hold data in columns.
  * Rows have pointer equality.
  */
-class Row : public Object {
+class Row {
 public:
     vector<String*>* types_;
     vector<int*>* int_arr;
@@ -78,6 +76,11 @@ public:
     }
 
     ~Row() {
+      types_->clear();
+      int_arr->clear();
+      bool_arr->clear();
+      float_arr->clear();
+      string_arr->clear();
       delete types_;
       delete int_arr;
       delete bool_arr;
@@ -171,7 +174,7 @@ public:
  *  is that this class should subclassed and the accept() method be given
  *  a meaningful implementation. Rowers can be cloned for parallel execution.
  */
-class Rower : public Object {
+class Rower {
 public:
     /** This method is called once per row. The row object is on loan and
         should not be retained as it is likely going to be reused in the next

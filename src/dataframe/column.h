@@ -1,10 +1,8 @@
 #pragma once
 
-#include "string.h"
-#include "object.h"
+#include "../string.h"
 #include <cstdarg>
 #include <vector>
-#include "array.h"
 
 using namespace std;
 
@@ -19,7 +17,7 @@ class BoolColumn;
  * This abstract class defines methods overriden in subclasses. There is
  * one subclass per element type. Columns are mutable, equality is pointer
  * equality. */
-class Column : public Object {
+class Column {
 public:
     char type;
 
@@ -107,6 +105,7 @@ public:
     }
 
     ~IntColumn() {
+        arr->clear();
         delete arr;
     }
 
@@ -170,6 +169,7 @@ public:
     }
 
     ~FloatColumn() {
+        arr->clear();
         delete arr;
     }
 
@@ -233,6 +233,7 @@ public:
     }
 
     ~BoolColumn() {
+        arr->clear();
         delete arr;
     }
 
@@ -298,6 +299,7 @@ public:
     }
 
     ~StringColumn() {
+        arr->clear();
         delete arr;
     }
 
@@ -328,155 +330,3 @@ public:
         return str_col;
     }
 };
-
-/**
- * ColumnArray: represents a resizable array of objects.
- */
-// class ColumnArray : public Object {
-//   public:
-//     Column*** loc;
-//     size_t cap;
-//     size_t inner_size;
-//     size_t size;
-
-//     ColumnArray(ColumnArray* col_arr) {
-//       cap = col_arr->cap;
-//       size = 0;
-//       inner_size = col_arr->inner_size;
-//       loc = new Column**[cap];
-      
-//       for (int i = 0; i < cap; i++) {
-//         loc[i] = new Column*[inner_size];
-//       }
-
-//       for (int i = 0; i < cap * inner_size; i++) {
-//         size_t outer_idx = i / inner_size;
-//         size_t inner_idx = i % inner_size;
-//         loc[outer_idx][inner_idx] = NULL;
-//       }
-
-//       for(int i = 0; i < col_arr->get_len(); i++) {
-//         Column* copy = col_arr->get(i)->copy();
-//         add(copy);
-//       }
-//     }
-
-//     /**
-//      * Constructs a new empty array.
-//      */
-//     ColumnArray() : Object() {
-//       cap = 4;
-//       size = 0;
-//       inner_size = 100;
-//       loc = new Column**[cap];
-      
-//       for (int i = 0; i < cap; i++) {
-//           loc[i] = new Column*[inner_size];
-//       }
-
-//       for (int i = 0; i < cap * inner_size; i++) {
-//         size_t outer_idx = i / inner_size;
-//         size_t inner_idx = i % inner_size;
-//         loc[outer_idx][inner_idx] = NULL;
-//       }
-//     }
-
-//     /**
-//      * Default destructor.
-//      */
-//     ~ColumnArray() {
-//       for(int i = 0; i < cap; i++) {
-//         for(int j = 0; j < inner_size; j++) {
-//           delete loc[i][j];
-//         }
-//         delete[] loc[i];
-//       }
-//       delete[] loc;
-//       cap = 0;
-//       size = 0;
-//     }
-
-//     /**
-//      * Returns the length of this Array.
-//      */
-//     virtual size_t get_len() {
-//       return size;
-//     }
-
-//     /**
-//      * Returns the value stored at index i in this Array.
-//      * If the given i is < 0 or >= than the length, a nullptr is returned.
-//      */
-//     virtual Column* get(size_t i) {
-//       if (i >= size) return nullptr;
-      
-//       // integer division should truncate this
-//       size_t outer_idx = i / inner_size;
-//       size_t inner_idx = i % inner_size;
-//       return loc[outer_idx][inner_idx];
-//     }
-
-//     /**
-//      * Sets the given Object o at index i in this Array.
-//      * Returns success or failure
-//      */
-//     virtual bool set(Column* o, size_t i) {
-//       if (i >= size) return false;
-      
-//       // integer division should truncate this
-//       size_t outer_idx = i / inner_size;
-//       size_t inner_idx = i % inner_size;
-//       loc[outer_idx][inner_idx] = o;
-
-//       return true;
-//     }
-
-//     /**
-//      * Determines if this Array is equal to a given Object o.
-//      */
-//     virtual bool equals(Object* o) {
-//       ColumnArray* a = dynamic_cast<ColumnArray*>(o);
-//       if (a == nullptr) return false;
-//       if (get_len() != a->get_len()) return false;
-
-//       for (int i = 0; i < get_len(); i++) {
-//         if (!get(i)->equals(a->get(i))) return false;
-//       }
-
-//       return true;
-//     }
-
-//     /**
-//     * Adds the given object o at the end of the array.
-//     */
-//     virtual void add(Column* o) {
-//       if (get_len() >= cap * inner_size) {
-//         cap *= 2;
-//         Column*** longer = new Column**[cap];
-
-//         for (int i = 0; i < cap; i++) {
-//           if (i < cap/2) {
-//             longer[i] = loc[i];            
-//           } else {
-//             longer[i] = new Column*[inner_size];
-//             for (int j = 0; j < inner_size; j++) {
-//               longer[i][j] = NULL;
-//             }
-//           }
-//         }
-
-//         //memcpy(longer, loi, (cap/2) * sizeof(int**));
-        
-//         //free memory
-//         delete[] loc;
-
-//         loc = longer;
-//       }
-//       // integer division should truncate this
-//       size_t outer_idx = get_len() / inner_size;
-//       size_t inner_idx = get_len() % inner_size;
-//       loc[outer_idx][inner_idx] = o;
-
-//       size++;
-//     }
-// };

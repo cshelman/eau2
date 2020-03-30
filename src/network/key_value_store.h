@@ -1,11 +1,11 @@
 #pragma once
 
-#include "dataframe.h"
+#include "../dataframe/dataframe.h"
 #include "node.h"
 #include "key.h"
 #include "fake_network.h"
-#include "serializer/buffer.h"
-#include "serializer/serial.h"
+#include "../serializer/buffer.h"
+#include "../serializer/serial.h"
 #include <string>
 #include <mutex>
 
@@ -25,8 +25,11 @@ public:
     }
 
     void shutdown() {
-        Message* kill_msg = new Message(MsgType::Kill, nullptr);
+        printf("\tMaster attempting to shutdown network (%ld)...\n", net->num_nodes);
+        string name = "";
+        Message* kill_msg = new Message(MsgType::Kill, new Key(name));
         for (int i = 0; i < net->num_nodes; i++) {
+            printf("\t\tSent kill msg to %d...\n", i);
             net->send_msg(i, kill_msg);
         }
     }
@@ -39,16 +42,30 @@ public:
         for (size_t i = 0; i < net->num_nodes; i++) {
             mtx.lock();
             net->send_msg(i, msg);
-            Message* ret_msg = net->recv_master();
-            buf->add(ret_msg->contents);
             mtx.unlock();
+            while (1) {
+                Message* ret_msg = net->recv_master();
+                if (ret_msg == nullptr) {
+                    delete ret_msg;
+                    continue;
+                }
+                else {
+                    buf->add(ret_msg->contents);
+                    printf("contents: %s\n", ret_msg->contents);
+                    delete ret_msg;
+                    break;
+                }
+            }
         }
         // deserialize the df from bytes and return
-        return deserialize_dataframe(buf->val);
+        printf("BUFFER VAL %s\n", buf->val);
+        DataFrame* df = deserialize_dataframe(buf->val);
+        delete buf;
+        return df;
     }
 
     void put(Key* key, DataFrame* df) {
-        Buffer* buf;
+        Buffer* buf = new Buffer();
         // serialize the df into bytes
         serialize_dataframe(df, buf);
         // if serialized length is larger than the chunking threshold
@@ -56,8 +73,8 @@ public:
             // split up the byte array into (number of nodes) chunks
             // put into each array according to the node index, using the same key
             size_t chunk_size = (buf->size / net->num_nodes) + 1;
-            char* temp = new char[chunk_size];
             for (size_t i = 0; i < net->num_nodes; i++) {
+                char* temp = new char[chunk_size];
                 memset(temp, '\0', chunk_size + 1);
                 size_t offset = i * chunk_size;
                 if (i == net->num_nodes - 1) {
@@ -70,6 +87,8 @@ public:
 
                 Message* msg = new Message(MsgType::Put, key, temp);
                 net->send_msg(i, msg);
+                delete[] temp;
+                delete msg;
             }
         }
         else {
@@ -78,6 +97,7 @@ public:
             net->send_msg(next_full_node, msg);
             next_full_node = (next_full_node + 1) % net->num_nodes;
         }
+        delete buf;
     }
     
     DataFrame* wait_and_get(Key key) {}

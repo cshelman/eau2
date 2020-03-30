@@ -3,8 +3,7 @@
 #include "row.h"
 #include "schema.h"
 #include "column.h"
-#include "string.h"
-#include "object.h"
+#include "../string.h"
 #include <vector>
 #include <thread>
 
@@ -15,7 +14,7 @@
  * holds values of the same type (I, S, B, F). A dataframe has a schema that
  * describes it.
  */
-class DataFrame : public Object {
+class DataFrame {
 public:
     vector<Column*>* col_arr;
     Schema* schema_;

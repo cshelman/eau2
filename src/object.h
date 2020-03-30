@@ -1,5 +1,5 @@
 #pragma once
-#include "helper.h"
+#include "sys.h"
 // LANGUAGE: CwC
 
 /** Base class for all objects in the system.

@@ -39,6 +39,7 @@ public:
                 cap = size + len + 1;
             }
             char* longer = new char[cap];
+            memset(longer, '\0', cap + 1);
             memcpy(longer, val, size * sizeof(char));
             delete[] val;
             val = longer;
@@ -50,7 +51,7 @@ public:
     }
 
     void add(const char* s) {
-        char* temp = new char[strlen(s) + 1];
+        char temp[strlen(s) + 1];
         strcpy(temp, s);
         add(temp);
     }

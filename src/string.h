@@ -34,8 +34,7 @@ public:
     String(char const* cstr) : String(cstr, strlen(cstr)) {}
 
     /** Build a string from another String */
-    String(String & from):
-        Object(from) {
+    String(String & from) : Object(from) {
         size_ = from.size_;
         cstr_ = new char[size_ + 1]; // ensure that we copy the terminator
         memcpy(cstr_, from.cstr_, size_ + 1);

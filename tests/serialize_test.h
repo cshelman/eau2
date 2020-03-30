@@ -21,7 +21,7 @@ void test_serialize() {
 
     DataFrame* df = new DataFrame(*s);
 
-    for(size_t i = 0; i < 3 * 1; i++) {
+    for(size_t i = 0; i < 5 * 1; i++) {
       Row* row = new Row(df->get_schema());
       for(size_t j = 0; j < 100; j++) {
         if(types[j%4] == 'I') {
@@ -44,7 +44,7 @@ void test_serialize() {
     serialize_dataframe(df, buffer);
 
     DataFrame* new_df = deserialize_dataframe(buffer->val);
-    new_df->print();
+    // new_df->print();
 
     delete[] col_types;
     delete[] types;

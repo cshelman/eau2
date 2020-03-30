@@ -15,7 +15,6 @@ void add_tag(const char* tag, char* val, Buffer* buffer) {
 
 // char* are not allowed to contain double quotes at the moment
 char* get_word(char* s, char open, char close) {
-    char* word = new char[strlen(s) + 1];
     int bracket_count = 0;
     bool in_string = false;
     int start = -1;
@@ -32,12 +31,13 @@ char* get_word(char* s, char open, char close) {
         else if (s[i] == close && !in_string) {
             bracket_count--;
             if (bracket_count == 0) {
+                char* word = new char[strlen(s) + 1];
                 memcpy(word, &s[start], i - start);
                 return word;
             }
         }
     }
-    printf("bad input to get_word:\n\t%s\n", s);
+    printf("invalid word %s\n", s);
     exit(1);
 }
 
@@ -69,12 +69,14 @@ vector<String*>* get_components(char* s) {
             String* str = new String(comp, i - start);
             components->push_back(str);
             start = i + 1;
+            // delete comp;
         }
         if (i >= strlen(s) - 1) {
             char* comp = new char[i - start + 1];
             memcpy(comp, &s[start], i - start + 1);
             String* str = new String(comp, i - start + 1);
             components->push_back(str);
+            // delete comp;
         }
     }
     return components;
@@ -88,12 +90,15 @@ void serialize_chars(char* s, Buffer* buffer) {
     memcpy(&ns[1], s, strlen(s));
     memcpy(&ns[strlen(s) + 1], "\"\0", 2);
     add_tag("char*", ns, buffer);
+    //delete[] ns;
 }
 
 char* deserialize_chars(char* s) {
     char* quotes = get_word(s, '{', '}');
     char* removed = new char[strlen(s) - 2];
     memcpy(removed, &quotes[1], strlen(s) - 10);
+
+    //delete quotes;
     return removed;
 }
 
@@ -101,11 +106,14 @@ void serialize_size_t(size_t n, Buffer* buffer) {
     char* ns = new char[64];
     sprintf(ns, "%zu", n);
     add_tag("size_t", ns, buffer);
+    //delete[] ns;
 }
 
 size_t deserialize_size_t(char* s) {
+    char* word = get_word(s, '{', '}');
     size_t st = 0;
-    sscanf(get_word(s, '{', '}'), "%zu", &st);
+    sscanf(word, "%zu", &st);
+    //delete word;
     return st;
 }
 
@@ -113,58 +121,70 @@ void serialize_int(int n, Buffer* buffer) {
     char* ns = new char[16];
     sprintf(ns, "%d", n);
     add_tag("int", ns, buffer);
+    //delete[] ns;
 }
 
 int deserialize_int(char* s) {
-    return atoi(get_word(s, '{', '}'));
+    char* word = get_word(s, '{', '}');
+    int i = atoi(word);
+    //delete word;
+    return i;
 }
 
 void serialize_bool(bool n, Buffer* buffer) {
-    if(n == 0) {
-        char* null = new char[4];
-        strcpy(null, "NULL");
-        add_tag("bool", null, buffer);
-        delete null;
-        return;
-    }
+    // if(n == 0) {
+    //     char* null = new char[4];
+    //     strcpy(null, "NULL");
+    //     add_tag("bool", null, buffer);
+    //     delete null;
+    //     return;
+    // }
 
     char* ns = new char[16];
     sprintf(ns, "%d", n);
     add_tag("bool", ns, buffer);
+    // delete[] ns;
 }
 
 bool deserialize_bool(char* s) {
     char* word = get_word(s, '{', '}');
 
     if(strcmp(word, "NULL") == 0) {
+        //delete word;
         return NULL;
     }
 
-    return atoi(word);
+    int i = atoi(word);
+    //delete word;
+    return i; 
 }
 
 void serialize_float(float f, Buffer* buffer) {
-    if(f == 0) {
-        char* null = new char[4];
-        strcpy(null, "NULL");
-        add_tag("float", null, buffer);
-        delete null;
-        return;
-    }
+    // if(f == NULL) {
+    //     char* null = new char[4];
+    //     strcpy(null, "NULL");
+    //     add_tag("float", null, buffer);
+    //     delete null;
+    //     return;
+    // }
 
     char* ns = new char[512];
     sprintf(ns, "%f", f);
     add_tag("float", ns, buffer);
+    // delete[] ns;
 }
 
 float deserialize_float(char* s) {
     char* word = get_word(s, '{', '}');
 
     if(strcmp(word, "NULL") == 0) {
+        //delete word;
         return NULL;
     }
 
-    return atof(word);
+    float f = atof(word);
+    //delete word;
+    return f;
 }
 
 void serialize_string(String* s, Buffer* buffer) {
@@ -191,6 +211,7 @@ String* deserialize_string(char* s) {
     char* word = get_word(s, '{', '}');
 
     if(strcmp(word, "NULL") == 0) {
+        //delete word;
         return nullptr;
     }
 
@@ -198,6 +219,10 @@ String* deserialize_string(char* s) {
     char* val = deserialize_chars(components->at(0)->c_str());
     int len = deserialize_size_t(components->at(1)->c_str());
     String* str = new String(val, len);
+
+    // delete components;
+    //delete word;
+    // delete val;
     return str;
 }
 
@@ -216,7 +241,8 @@ void serialize_string_vector(vector<String*>* vs, Buffer* buffer) {
 }
 
 vector<String*>* deserialize_string_vector(char* s) {
-    vector<String*>* components = get_components(get_word(s, '{', '}'));
+    char* word = get_word(s, '{', '}');
+    vector<String*>* components = get_components(word);
     vector<String*>* vs = new vector<String*>();
 
     for(int i = 0; i < components->size(); i++) {
@@ -224,6 +250,8 @@ vector<String*>* deserialize_string_vector(char* s) {
         vs->push_back(st);
     }
 
+    // delete components;
+    //delete word;
     return vs;
 }
 
@@ -238,11 +266,13 @@ void serialize_int_vector(vector<int>* vi, Buffer* buffer) {
     }
 
     add_tag("IntVector", temp->val, buffer);
+    
     delete temp;
 }
 
 vector<int>* deserialize_int_vector(char* s) {
-    vector<String*>* components = get_components(get_word(s, '{', '}'));
+    char* word = get_word(s, '{', '}');
+    vector<String*>* components = get_components(word);
     vector<int>* vi = new vector<int>();
 
     for(int i = 0; i < components->size(); i++) {
@@ -250,6 +280,8 @@ vector<int>* deserialize_int_vector(char* s) {
         vi->push_back(val);
     }
 
+    // delete components;
+    //delete word;
     return vi;
 }
 
@@ -268,7 +300,8 @@ void serialize_float_vector(vector<float>* vf, Buffer* buffer) {
 }
 
 vector<float>* deserialize_float_vector(char* s) {
-    vector<String*>* components = get_components(get_word(s, '{', '}'));
+    char* word = get_word(s, '{', '}');
+    vector<String*>* components = get_components(word);
     vector<float>* vf = new vector<float>();
 
     for(int i = 0; i < components->size(); i++) {
@@ -276,6 +309,8 @@ vector<float>* deserialize_float_vector(char* s) {
         vf->push_back(f);
     }
 
+    // delete components;
+    //delete word;
     return vf;
 }
 
@@ -294,7 +329,8 @@ void serialize_bool_vector(vector<bool>* vb, Buffer* buffer) {
 }
 
 vector<bool>* deserialize_bool_vector(char* s) {
-    vector<String*>* components = get_components(get_word(s, '{', '}'));
+    char* word = get_word(s, '{', '}');
+    vector<String*>* components = get_components(word);
     vector<bool>* vb = new vector<bool>();
 
     for(int i = 0; i < components->size(); i++) {
@@ -302,6 +338,8 @@ vector<bool>* deserialize_bool_vector(char* s) {
         vb->push_back(b);
     }
 
+    // delete components;
+    //delete word;
     return vb;
 }
 
@@ -336,21 +374,25 @@ Column* deserialize_column(char* s) {
         IntColumn* ic = new IntColumn();
         vector<int>* vi = deserialize_int_vector(col_str);
         ic->arr = vi;
+        // delete col_str;
         return ic;
     } else if(strcmp(type, "FloatVector") == 0) {
         FloatColumn* fc = new FloatColumn();
         vector<float>* vf = deserialize_float_vector(col_str);
         fc->arr = vf;
+        // delete col_str;
         return fc;
     } else if(strcmp(type, "BoolVector") == 0) {
         BoolColumn* bc = new BoolColumn();
         vector<bool>* vb = deserialize_bool_vector(col_str);
         bc->arr = vb;
+        // delete col_str;
         return bc;
     } else if(strcmp(type, "StringVector") == 0) {
         StringColumn* sc = new StringColumn();
         vector<String*>* vs = deserialize_string_vector(col_str);
         sc->arr = vs;
+        // delete col_str;
         return sc;
     }
 }
@@ -370,7 +412,8 @@ void serialize_col_vector(vector<Column*>* vc, Buffer* buffer) {
 }
 
 vector<Column*>* deserialize_col_vector(char* s) {
-    vector<String*>* components = get_components(get_word(s, '{', '}'));
+    char* word = get_word(s, '{', '}');
+    vector<String*>* components = get_components(word);
     vector<Column*>* vc = new vector<Column*>();
 
     for(int i = 0; i < components->size(); i++) {
@@ -378,6 +421,8 @@ vector<Column*>* deserialize_col_vector(char* s) {
         vc->push_back(c);
     }
 
+    //delete word;
+    // delete components;
     return vc;
 }
 
@@ -398,12 +443,14 @@ void serialize_schema(Schema* s, Buffer* buffer) {
 
     serialize_string_vector(s->row_names_, temp);
     
+    
     add_tag("Schema", temp->val, buffer);
     delete temp;
 }
 
 Schema* deserialize_schema(char* s) {
-    vector<String*>* components = get_components(get_word(s, '{', '}'));
+    char* word = get_word(s, '{', '}');
+    vector<String*>* components = get_components(word);
 
     size_t num_cols = deserialize_size_t(components->at(0)->c_str());
     size_t num_rows = deserialize_size_t(components->at(1)->c_str());
@@ -420,6 +467,8 @@ Schema* deserialize_schema(char* s) {
     sc->col_names_ = col_names;
     sc->row_names_ = row_names;
 
+    // delete components;
+    //delete word;
     return sc;
 }
 
@@ -432,19 +481,27 @@ void serialize_dataframe(DataFrame* df, Buffer* buffer) {
     serialize_col_vector(df->col_arr, temp);
     
     add_tag("DataFrame", temp->val, buffer);
+
+    //printf("serialized dataframe: %s\n", buffer->val);
     delete temp;
 }
 
 DataFrame* deserialize_dataframe(char* s) {
-    vector<String*>* components = get_components(get_word(s, '{', '}'));
+    // printf("start deserializingg %s\n", s);
+    char* word = get_word(s, '{', '}');
+    vector<String*>* components = get_components(word);
 
+    // printf("start deserializing shcema\n");
     Schema* sc = deserialize_schema(components->at(0)->c_str());
+    // printf("done deserializing shcema\n");
     vector<Column*>* vc = deserialize_col_vector(components->at(1)->c_str());
     
     DataFrame* df = new DataFrame(*sc);
     delete df->col_arr;
     df->col_arr = vc;
-
+    
+    //delete word;
+    // delete components;
     return df;
 }
 

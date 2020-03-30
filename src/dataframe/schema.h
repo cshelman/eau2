@@ -1,8 +1,9 @@
 #pragma once
 
-#include "object.h"
 #include "string.h"
 #include <vector>
+
+using namespace std;
 
 /*************************************************************************
  * Schema::
@@ -11,7 +12,7 @@
  * optionally columns and rows can be named by strings.
  * The valid types are represented by the chars 'S', 'B', 'I' and 'F'.
  */
-class Schema : public Object {
+class Schema {
 public:
     size_t num_cols_;
     size_t num_rows_;
@@ -35,25 +36,6 @@ public:
         types_ = new vector<String*>();
         col_names_ = new vector<String*>();
         row_names_ = new vector<String*>();
-    }
- 
-    /** Create a schema from a string of types. A string that contains
-      * characters other than those identifying the four type results in
-      * undefined behavior. The argument is external, a nullptr argument is
-      * undefined. **/
-    Schema(const char* types) {
-        num_cols_ = strlen(types);
-        num_rows_ = 0;
-        types_ = new vector<String*>();
-        col_names_ = new vector<String*>();
-        row_names_ = new vector<String*>();
-
-        for (int i = 0; i < strlen(types); i++) {
-            String* str = new String(&types[i], 1);
-            types_->push_back(str);
-            col_names_->push_back(nullptr);
-            delete str;
-        }
     }
 
     ~Schema() {
