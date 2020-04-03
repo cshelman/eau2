@@ -182,19 +182,15 @@ public:
         char t = schema_->col_type(i);
         switch (t) {
           case 'S': 
-            // printf("trying to string col push: %s\n", row.get_string(i)->c_str());
             col_arr->at(i)->as_string()->push_back(row.get_string(i));
             break;
           case 'B': 
-            // printf("trying to bool col push: %d\n", row.get_bool(i));
             col_arr->at(i)->as_bool()->push_back(row.get_bool(i));
             break;
           case 'I': 
-            // printf("trying to int col push: %d\n", row.get_int(i));
             col_arr->at(i)->as_int()->push_back(row.get_int(i));
             break;
           case 'F': 
-            // printf("trying to float col push: %f\n", row.get_float(i));
             col_arr->at(i)->as_float()->push_back(row.get_float(i));
             break;
           default:
