@@ -14,7 +14,7 @@ public:
      */
     Buffer() {
         val = new char[INITIAL_SIZE];
-        memset(val, '\0', INITIAL_SIZE + 1);
+        memset(val, '\0', INITIAL_SIZE);
         cap = INITIAL_SIZE;
         size = 0;
     }
@@ -39,7 +39,7 @@ public:
                 cap = size + len + 1;
             }
             char* longer = new char[cap];
-            memset(longer, '\0', cap + 1);
+            memset(longer, '\0', cap);
             memcpy(longer, val, size * sizeof(char));
             delete[] val;
             val = longer;

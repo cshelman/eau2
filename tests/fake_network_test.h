@@ -12,6 +12,8 @@ using namespace std;
 
 FakeNetwork* net;
 
+// The code that runs the node
+// This will effectively be identical in the real network version
 void fake_network_callback(size_t node_id) {
     Node node(node_id);
     while (true) {
@@ -87,6 +89,7 @@ void test_fake_network(size_t nodes) {
     delete df1;
     delete df2;
     delete k1;
+    delete kv;
 
     printf("fake network test: SUCCESS\n");
 }
