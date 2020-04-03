@@ -43,9 +43,44 @@ public:
         delete col_names_;
         delete row_names_;
     }
+
+    bool equals(Schema* schin) {
+        if (num_cols_ != schin->num_cols_) return false;
+        if (num_rows_ != schin->num_rows_) return false;
+
+        for (int i = 0; i < types_->size(); i++) {
+            if (!types_->at(i)->equals(schin->types_->at(i))) {
+                return false;
+            }
+        }
+
+        for (int i = 0; i < col_names_->size(); i++) {
+            if (col_names_->at(i) == nullptr) {
+                if (schin->col_names_->at(i) != nullptr) {
+                    return false;
+                }
+            }
+            else if (!col_names_->at(i)->equals(schin->col_names_->at(i))) {
+                return false;
+            }
+        }
+
+        for (int i = 0; i < row_names_->size(); i++) {
+            if (row_names_->at(i) == nullptr) {
+                if (schin->row_names_->at(i) != nullptr) {
+                    return false;
+                }
+            }
+            else if (!row_names_->at(i)->equals(schin->row_names_->at(i))) {
+                return false;
+            }
+        }
+
+        return true;
+    }
  
     /** Add a column of the given type and name (can be nullptr), name
-      * is external. Names are expectd to be unique, duplicates result
+      * is external. Names are expected to be unique, duplicates result
       * in undefined behavior. */
     void add_column(char typ, String* name) {
         num_cols_++;

@@ -3,9 +3,12 @@
 #include "row.h"
 #include "schema.h"
 #include "column.h"
+#include "row.h"
 #include "../string.h"
 #include <vector>
 #include <thread>
+
+using namespace std;
 
 /****************************************************************************
  * DataFrame::
@@ -244,6 +247,33 @@ public:
       Rower* r = new Rower();
       map(*r);
       delete r;
+    }
+
+    bool equals(DataFrame* dfin) {
+      // check schema equality
+      if (!schema_->equals(dfin->schema_)) {
+        return false;
+      }
+
+      EqualityRower* rower = new EqualityRower();
+
+      for (int i = 0; i < nrows(); i++) {
+        Row* cur_row = new Row(*schema_);
+        fill_row(i, *cur_row);
+        cur_row->set_idx(i);
+
+        Row* dfin_row = new Row(*dfin->schema_);
+        fill_row(i, *dfin_row);
+        dfin_row->set_idx(i);
+
+        rower->accept(*cur_row, *dfin_row);
+        delete cur_row;
+        delete dfin_row;
+      }
+
+      bool is_equal = rower->is_equal;
+      delete rower;
+      return is_equal;
     }
     
     void apply_rower(Rower* r, size_t rower_num, size_t rower_rows, size_t num_rowers) {

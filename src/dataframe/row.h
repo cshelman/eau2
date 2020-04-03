@@ -3,6 +3,7 @@
 #include <vector>
 #include "../string.h"
 #include "schema.h"
+#include "dataframe.h"
 
 using namespace std;
 
@@ -12,33 +13,32 @@ using namespace std;
  */
 class Fielder {
 public:
+  /** Called before visiting a row, the argument is the row offset in the
+  dataframe. */
+  virtual void start(size_t r) {
+    printf("row: %d\t", (int)r);
+  }
 
-    /** Called before visiting a row, the argument is the row offset in the
-    dataframe. */
-    virtual void start(size_t r) {
-      printf("row: %d\t", (int)r);
-    }
+  /** Called for fields of the argument's type with the value of the field. */
+  virtual void accept(bool b) {
+    printf("| bool: %d ", b);
+  }
 
-    /** Called for fields of the argument's type with the value of the field. */
-    virtual void accept(bool b) {
-      printf("bool: %d ", b);
-    }
+  virtual void accept(float f) {
+    printf("| float: %.3f ", f);
+  }
+  virtual void accept(int i) {
+    printf("| int: %d ", i);
+  }
 
-    virtual void accept(float f) {
-      printf("float: %.3f ", f);
-    }
-    virtual void accept(int i) {
-      printf("int: %d ", i);
-    }
+  virtual void accept(String* s) {
+    printf("| string: %s ", s->c_str());
+  }
 
-    virtual void accept(String* s) {
-      printf("string: %s ", s->c_str());
-    }
-
-    /** Called when all fields have been seen. */
-    virtual void done() {
-      printf("\n");
-    }
+  /** Called when all fields have been seen. */
+  virtual void done() {
+    printf("\n");
+  }
 };
  
 /*************************************************************************
@@ -176,26 +176,67 @@ public:
  */
 class Rower {
 public:
-    /** This method is called once per row. The row object is on loan and
-        should not be retained as it is likely going to be reused in the next
-        call. The return value is used in filters to indicate that a row
-        should be kept. */
-    virtual bool accept(Row& r) {
-      Fielder* fielder = new Fielder();
-      r.visit(r.get_idx(), *fielder);
-      delete fielder;
-      return true;
-    }
+  /** This method is called once per row. The row object is on loan and
+      should not be retained as it is likely going to be reused in the next
+      call. The return value is used in filters to indicate that a row
+      should be kept. */
+  virtual bool accept(Row& r) {
+    Fielder* fielder = new Fielder();
+    r.visit(r.get_idx(), *fielder);
+    delete fielder;
+    return true;
+  }
 
-    /** Once traversal of the data frame is complete the rowers that were
-        split off will be joined.  There will be one join per split. The
-        original object will be the last to be called join on. The join method
-        is reponsible for cleaning up memory. */
-    virtual void join_delete(Rower* other) {
-      delete other;
-    }
+  /** Once traversal of the data frame is complete the rowers that were
+      split off will be joined. There will be one join per split. The
+      original object will be the last to be called join on. The join method
+      is reponsible for cleaning up memory. */
+  virtual void join_delete(Rower* other) {
+    delete other;
+  }
 
-    virtual Rower* clone() {
-      return new Rower();
+  virtual Rower* clone() {
+    return new Rower();
+  }
+};
+
+class EqualityRower : public Rower {
+public:
+  bool is_equal;
+
+  EqualityRower() {
+    is_equal = true;
+  }
+
+  void dead_toggle(bool b) {
+    if (is_equal == true && b == false) {
+      is_equal = false;
     }
+  }
+  
+  bool accept(Row& r, Row& rin) {
+    for (int i = 0; i < r.types_->size(); i++) {
+      char t = r.types_->at(i)->at(0);
+      if (t == 'I') {
+        dead_toggle(rin.get_int(i) == r.get_int(i));
+      } else if (t == 'S') {
+        dead_toggle(rin.get_string(i)->equals(r.get_string(i)));
+      } else if (t == 'F') {
+        dead_toggle(rin.get_float(i) == r.get_float(i));
+      } else if (t == 'B') {
+        dead_toggle(rin.get_bool(i) == r.get_bool(i));
+      }
+    }
+    return is_equal;
+  }
+
+  bool join_delete(EqualityRower* other) {
+    bool ret = is_equal && other->is_equal;
+    delete other;
+    return ret;
+  }
+
+  Rower* clone() {
+    return new EqualityRower();
+  }
 };

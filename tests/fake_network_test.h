@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../src/dataframe/dataframe.h"
 #include "../src/network/node.h"
 #include "../src/network/fake_network.h"
 #include "../src/network/key_value_store.h"
@@ -12,9 +13,9 @@ using namespace std;
 FakeNetwork* net;
 
 void fake_network_callback(size_t node_id) {
-    printf("\t%ld: creating node...\n", node_id);
+    // printf("\t%ld: creating node...\n", node_id);
     Node node(node_id);
-    printf("\t%ld: starting receive loop...\n", node_id);
+    // printf("\t%ld: starting receive loop...\n", node_id);
     while (true) {
         // printf("\t%ld: receiving msg...\n", node_id);
         Message* recv = net->recv_msg(node_id);
@@ -27,18 +28,20 @@ void fake_network_callback(size_t node_id) {
 
         // printf("\t%ld: checking msg type...\n", node_id);
         if (recv->type == MsgType::Put) {
-            printf("-\t%ld: Put msg...\n", node_id);
+            // printf("-\t%ld: Put msg...\n", node_id);
             node.put(recv->key, recv->contents);
         }
         else if (recv->type == MsgType::Get) {
-            printf("-\t%ld: Get msg...\n", node_id);
+            // printf("-\t%ld: Get msg...\n", node_id);
+            // printf("\t%ld: Key: `%s`\n", node_id, recv->key->name.c_str());
             char* contents = node.get(recv->key);
+            // printf("!\t%ld: contents about to be sent: `%s`\n", node_id, contents);
             Message* ret_msg = new Message(MsgType::Put, recv->key, contents);
             net->send_master(ret_msg);
             delete ret_msg;
         }
         else if (recv->type == MsgType::Kill) {
-            printf("-\t%ld: Kill msg...\n", node_id);
+            // printf("-\t%ld: Kill msg...\n", node_id);
             delete recv;
             return;
         }
@@ -52,22 +55,22 @@ void fake_network_callback(size_t node_id) {
 
 void test_fake_network(size_t nodes) {
     size_t num_nodes = nodes;
-    printf("Creating network...\n");
+    // printf("Creating network...\n");
     net = new FakeNetwork(num_nodes);
-    printf("Creating KVStore...\n");
+    // printf("Creating KVStore...\n");
     KVStore* kv = new KVStore(net);
 
-    printf("Creating schema...\n");
+    // printf("Creating schema...\n");
     Schema* s = new Schema();
     s->add_column('I', nullptr);
     s->add_column('F', nullptr);
     s->add_column('B', nullptr);
     s->add_column('S', nullptr);
 
-    printf("Creating dataframe...\n");
+    // printf("Creating dataframe...\n");
     DataFrame* df1 = new DataFrame(*s);
 
-    printf("Filling dataframe...\n");
+    // printf("Filling dataframe...\n");
     for (size_t i = 0; i < 10; i++) {
         Row* row = new Row(df1->get_schema());
         row->set(0, (int)i);
@@ -80,29 +83,29 @@ void test_fake_network(size_t nodes) {
         delete row;
     }
 
-    printf("Creating Key...\n");
+    // printf("Creating Key...\n");
     Key* k1 = new Key("one");
 
-    printf("Creating threads...\n");
+    // printf("Creating threads...\n");
     thread* ts[num_nodes];
     for (int i = 0; i < num_nodes; i++) {
         ts[i] = new thread(fake_network_callback, i);
     }
 
-    printf("Putting df1 in kv...\n");
+    // printf("Putting df1 in kv...\n");
     kv->put(k1, df1);
-    printf("Getting df1 from kv...\n");
+    // printf("Getting df1 from kv...\n");
     DataFrame* df2 = kv->get(k1);
-    printf("Shutting down KVStore...\n");
+    // printf("Shutting down KVStore...\n");
     kv->shutdown();
 
-    printf("Joining threads...\n");
+    // printf("Joining threads...\n");
     for (int i = 0; i < num_nodes; i++) {
         ts[i]->join();
     }
     
-    printf("Comparing dataframes...\n");
-    assert(df1->col_arr == df2->col_arr);
+    // printf("Comparing dataframes...\n");
+    assert(df1->equals(df2));
 
     delete df1;
     delete df2;

@@ -37,7 +37,7 @@ char* get_word(char* s, char open, char close) {
             }
         }
     }
-    printf("invalid word %s\n", s);
+    printf("invalid word: `%s`\n", s);
     exit(1);
 }
 
@@ -487,7 +487,7 @@ void serialize_dataframe(DataFrame* df, Buffer* buffer) {
 }
 
 DataFrame* deserialize_dataframe(char* s) {
-    // printf("start deserializingg %s\n", s);
+    // printf("start deserializing dataframe:\n`%s`\n\n", s);
     char* word = get_word(s, '{', '}');
     vector<String*>* components = get_components(word);
 

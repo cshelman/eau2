@@ -39,7 +39,9 @@ public:
         Buffer* buf = new Buffer();
         // pull the byte sequence chunks from each node sequentially
         // add the result to the buffer each time
+        // printf("Starting to pull from nodes...\n");
         for (size_t i = 0; i < net->num_nodes; i++) {
+            // printf("About to poll node %ld\n", i);
             mtx.lock();
             net->send_msg(i, msg);
             mtx.unlock();
@@ -50,15 +52,15 @@ public:
                     continue;
                 }
                 else {
+                    // printf("Server received from node %ld: `%s`\n", i, ret_msg->contents);
                     buf->add(ret_msg->contents);
-                    //printf("contents: %s\n", ret_msg->contents);
                     delete ret_msg;
                     break;
                 }
             }
         }
         // deserialize the df from bytes and return
-        // printf("BUFFER VAL %s\n", buf->val);
+        // printf("KVStore got: `%s`\n", buf->val);
         DataFrame* df = deserialize_dataframe(buf->val);
         delete buf;
         return df;

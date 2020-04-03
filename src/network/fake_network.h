@@ -103,10 +103,15 @@ public:
 
     void send_master(Message* msg) {
         Message* temp = msg->copy();
-        master_queue->push(msg);
+        master_queue->push(temp);
     }
 
     Message* recv_master() {
-        return master_queue->pop();
+        Message* temp = master_queue->pop();
+        if (temp != nullptr) {
+            // printf("recv_master() popping: `%s`\n", temp->contents);
+        }
+        return temp;
+        // return master_queue->pop();
     }
 };
