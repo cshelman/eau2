@@ -14,7 +14,7 @@ void test_dataframe_basic() {
 
     Schema* s = new Schema();
     for(int i = 0; i < 100; i++) {
-      s->add_column(col_types[i], nullptr);
+      s->add_column(col_types[i]);
     }
 
     DataFrame df(*s);

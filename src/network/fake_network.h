@@ -1,6 +1,6 @@
 #pragma once
 
-#include "key_value_store.h"
+#include "server.h"
 #include "key.h"
 #include <string>
 #include <queue>

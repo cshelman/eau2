@@ -3,7 +3,7 @@
 #include "../src/dataframe/dataframe.h"
 #include "../src/network/node.h"
 #include "../src/network/fake_network.h"
-#include "../src/network/key_value_store.h"
+#include "../src/network/server.h"
 #include <thread>
 #include <vector>
 #include <stdio.h>
@@ -24,10 +24,12 @@ void fake_network_callback(size_t node_id) {
         }
 
         if (recv->type == MsgType::Put) {
+            // printf("node %ld received: %s\n\n", node_id, recv->contents);
             node.put(recv->key, recv->contents);
         }
         else if (recv->type == MsgType::Get) {
             char* contents = node.get(recv->key);
+            // printf("node sending back contents: `%s`\n", contents);
             Message* ret_msg = new Message(MsgType::Put, recv->key, contents);
             net->send_master(ret_msg);
             delete ret_msg;
@@ -47,17 +49,17 @@ void fake_network_callback(size_t node_id) {
 void test_fake_network(size_t nodes) {
     size_t num_nodes = nodes;
     net = new FakeNetwork(num_nodes);
-    KVStore* kv = new KVStore(net);
+    Server* kv = new Server(net);
 
     Schema* s = new Schema();
-    s->add_column('I', nullptr);
-    s->add_column('F', nullptr);
-    s->add_column('B', nullptr);
-    s->add_column('S', nullptr);
+    s->add_column('I');
+    s->add_column('F');
+    s->add_column('B');
+    s->add_column('S');
 
     DataFrame* df1 = new DataFrame(*s);
 
-    for (size_t i = 0; i < 10; i++) {
+    for (size_t i = 0; i < 10000; i++) {
         Row* row = new Row(df1->get_schema());
         row->set(0, (int)i);
         row->set(1, (float)i);
@@ -78,6 +80,7 @@ void test_fake_network(size_t nodes) {
 
     kv->put(k1, df1);
     DataFrame* df2 = kv->get(k1);
+
     kv->shutdown();
 
     for (int i = 0; i < num_nodes; i++) {

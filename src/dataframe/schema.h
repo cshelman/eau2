@@ -54,39 +54,17 @@ public:
             }
         }
 
-        for (int i = 0; i < col_names_->size(); i++) {
-            if (col_names_->at(i) == nullptr) {
-                if (schin->col_names_->at(i) != nullptr) {
-                    return false;
-                }
-            }
-            else if (!col_names_->at(i)->equals(schin->col_names_->at(i))) {
-                return false;
-            }
-        }
-
-        for (int i = 0; i < row_names_->size(); i++) {
-            if (row_names_->at(i) == nullptr) {
-                if (schin->row_names_->at(i) != nullptr) {
-                    return false;
-                }
-            }
-            else if (!row_names_->at(i)->equals(schin->row_names_->at(i))) {
-                return false;
-            }
-        }
-
         return true;
     }
  
     /** Add a column of the given type and name (can be nullptr), name
       * is external. Names are expected to be unique, duplicates result
       * in undefined behavior. */
-    void add_column(char typ, String* name) {
+    void add_column(char typ) {
         num_cols_++;
         String* str_typ = new String(&typ, 1);
         types_->push_back(str_typ);
-        col_names_->push_back(name);
+        col_names_->push_back(nullptr);
     }
 
     /** Add a row with a name (possibly nullptr), name is external.  Names are

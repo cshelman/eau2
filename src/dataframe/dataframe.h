@@ -77,12 +77,12 @@ public:
 
     /** Adds a column this dataframe, updates the schema, the new column
       * is external, and appears as the last column of the dataframe, the
-      * name is optional and external. A nullptr colum is undefined. */
-    void add_column(Column* col, String* name) {
+      * name is optional and external. A nullptr column is undefined. */
+    void add_column(Column* col) {
       // Column* copy = new Column(col);
       col_arr->push_back(col->copy());
-      schema_->add_column(col->get_type(), name->clone());
-    }
+      schema_->add_column(col->get_type());
+    }    
 
     /** Return the value at the given column and row. Accessing rows or
      *  columns out of bounds, or request the wrong type is undefined.*/
