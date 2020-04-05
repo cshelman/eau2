@@ -31,6 +31,12 @@ valgrind_serialize: build_serialize
 valgrind_fake_network: build_fake_network
 	valgrind --leak-check=full ./test_fake_network.out
 
+build_word_count:
+	g++ -g -std=c++11 tests/test_word_count.cpp -o test_word_count.out -lpthread
+
+run_word_count: build_word_count
+	./test_word_count.out
+
 clean:
 	rm *.out
 

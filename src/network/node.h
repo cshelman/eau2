@@ -45,6 +45,9 @@ public:
     }
 
     void put(Key* key, char* data) {
+
+        //printf("put in %s: \n", data);
+
         if (pairs->count(key->name) > 0) {
             printf("Node already contains key: `%s`\n", key->name.c_str());
             printf("Did not add new value\n");

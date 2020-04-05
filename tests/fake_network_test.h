@@ -6,6 +6,7 @@
 #include "../src/network/server.h"
 #include <thread>
 #include <vector>
+#include <string>
 #include <stdio.h>
 
 using namespace std;
@@ -16,6 +17,7 @@ FakeNetwork* net;
 // This will effectively be identical in the real network version
 void fake_network_callback(size_t node_id) {
     Node node(node_id);
+    string* put_msg = new string("");
     while (true) {
         Message* recv = net->recv_msg(node_id);
 
@@ -24,8 +26,16 @@ void fake_network_callback(size_t node_id) {
         }
 
         if (recv->type == MsgType::Put) {
-            // printf("node %ld received: %s\n\n", node_id, recv->contents);
-            node.put(recv->key, recv->contents);
+            //printf("node %ld received: %s\n\n", node_id, recv->contents);
+            //printf("msg so far: %s\n", put_msg->c_str());
+
+            if (strcmp(recv->contents, "END") == 0) {
+                node.put(recv->key, (char*)put_msg->c_str());
+                *put_msg = "";
+            }
+            else {
+                *put_msg += recv->contents;
+            }
         }
         else if (recv->type == MsgType::Get) {
             char* contents = node.get(recv->key);

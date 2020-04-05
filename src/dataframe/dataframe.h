@@ -299,7 +299,7 @@ public:
         thread* threads[num_rowers];
         Rower* rowers[num_rowers];
         for (int i = 0; i < num_rowers; i++) {
-            if(i == 0) {
+            if (i == 0) {
               rowers[i] = &r;
             } else {
               rowers[i] = r.clone();

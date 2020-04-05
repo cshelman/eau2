@@ -92,6 +92,31 @@ public:
         delete qs;
     }
 
+    vector<Message*>* parse_msg(MsgType type, Key* key, char* s) {
+        vector<Message*>* messages = new vector<Message*>();
+        string* str = new string(s);
+        int chunk_size = 5000;
+        int start = 0;
+        int end = chunk_size;
+
+        while (true) {
+            Message* msg = new Message(type, key, (char*)str->substr(start, end - start).c_str());
+            messages->push_back(msg);
+
+            if (end == str->size() - 1) {
+                break;
+            }
+            start = end;
+            end += chunk_size;
+            if (end > str->size()) {
+                end = str->size() - 1;
+            }
+        }
+        Message* end_msg = new Message(type, key, (char*)"END");
+        messages->push_back(end_msg);
+        return messages;
+    }
+
     void send_msg(size_t dest, Message* msg) {
         Message* temp = msg->copy();
         qs->at(dest)->push(temp);

@@ -99,9 +99,14 @@ public:
             delete cols_to_send;
 
             // send serialized package
-            Message* msg = new Message(MsgType::Put, key, (char*)val.c_str());
-            net->send_msg(i, msg);
-            delete msg;
+            // Message* msg = new Message(MsgType::Put, key, (char*)val.c_str());
+            vector<Message*>* messages = net->parse_msg(MsgType::Put, key, (char*)val.c_str());
+            for (int j = 0; j < messages->size(); j++) {
+                net->send_msg(i, messages->at(j));
+            }
+            
+            delete messages;
+            // delete msg;
         }
         delete col_arr;
     }

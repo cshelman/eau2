@@ -1,1 +1,1 @@
-memory issues caused by sending columns that are too large (the whole column is put into 1 message)
+eventually change get to send a list of messages like the put
