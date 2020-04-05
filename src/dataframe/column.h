@@ -275,7 +275,7 @@ public:
 
     StringColumn(StringColumn* col) {
         type = col->type;
-        arr = col->arr;
+        arr = new vector<String*>(*col->arr);
     }
 
     StringColumn() {
@@ -308,7 +308,12 @@ public:
     }
 
     void push_back(String* val) {
-        arr->push_back(val);
+        if (val == nullptr) {
+            arr->push_back(nullptr);
+        }
+        else {
+            arr->push_back(val->clone());
+        }
     }
 
     /** Returns the string at idx; undefined on invalid idx.*/

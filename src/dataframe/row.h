@@ -107,7 +107,14 @@ public:
 
     /** Acquire ownership of the string. */
     void set(size_t col, String* val) {
-      string_arr->at(col) = val->clone();
+      // printf("string_arr size: %ld, col size: %ld\n", string_arr->size(), col);
+      if (val == nullptr) {
+        string_arr->at(col) = nullptr;
+      }
+      else {
+        // printf("setting to val: %s\n", val->c_str());
+        string_arr->at(col) = val->clone();
+      }
     }
 
     /** Set/get the index of this row (ie. its position in the dataframe. This is

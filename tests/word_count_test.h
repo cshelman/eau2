@@ -3,6 +3,7 @@
 #include "../src/dataframe/schema.h"
 #include "../src/dataframe/dataframe.h"
 #include "../src/string.h"
+#include "../src/serializer/serial.h"
 #include <fstream>
 #include <map>
 #include <string>
@@ -15,8 +16,10 @@ using namespace std;
 //print the different words and their counts
 
 DataFrame* parse_file(string filename) {
+    int col_len = 1000;
+
     Schema* s = new Schema();
-    s->add_column('S');
+    s->num_rows_ = col_len;
     DataFrame* df = new DataFrame(*s);
 
      // filestream variable file 
@@ -27,8 +30,19 @@ DataFrame* parse_file(string filename) {
     file.open(filename.c_str());
   
     // extracting words from the file
-    while (file >> word) {
-        Row* row = new Row(df->get_schema());
+    int row_count = 0;
+    StringColumn* sc = new StringColumn();
+    while (file >> word) {        
+        if (row_count >= col_len) {
+        //   string serial = serialize_str_vector(sc->arr);
+        //   printf("serialized column: %s\n\n", serial.c_str());
+        //   printf("adding column with size %ld\n", sc->size());
+          df->add_column(sc);
+          delete sc;
+          sc = new StringColumn();
+          row_count = 0;
+        }
+        
         string* str = new string((char*)word.c_str());
 
         char c = str->back();
@@ -37,12 +51,24 @@ DataFrame* parse_file(string filename) {
         }
 
         String* s = new String((char*)str->c_str());
-        row->set(0, s);
-        df->add_row(*row);
+        // printf("pushing %s (%ld)\n", s->c_str(), s->size());
+        sc->push_back(s);
         delete str;
         delete s;
-        delete row;
+
+        row_count++;
     } 
+
+    String* test = new String("x");
+    while (sc->size() < col_len) {
+      sc->push_back(test);
+    }
+    // string serial = serialize_str_vector(sc->arr);
+    // printf("serialized column: %s\n\n", serial.c_str());
+    // printf("adding column with size %ld\n", sc->size());
+    df->add_column(sc);
+    // string aa = serialize_col_vectordf->col_arr;
+    delete sc;
 
     return df;
 }
@@ -56,16 +82,18 @@ public:
   }
   
   bool accept(Row& r) {
-    String* word = r.get_string(0);
-    assert(word != nullptr);
-    string* s = new string(word->c_str());
-    
-    if (word_counts->count(*s) > 0) {
-        int count = word_counts->at(*s) + 1;
-        word_counts->at(*s) = count;
-    }
-    else {
-        word_counts->insert({*s, 1});
+    for (int i = 0; i < r.width(); i++) {
+        String* word = r.get_string(i);
+        assert(word != nullptr);
+        string* s = new string(word->c_str());
+        
+        if (word_counts->count(*s) > 0) {
+            int count = word_counts->at(*s) + 1;
+            word_counts->at(*s) = count;
+        }
+        else {
+            word_counts->insert({*s, 1});
+        }
     }
     return true;
   }
