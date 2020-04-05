@@ -2,6 +2,7 @@
 
 #include "server.h"
 #include "../dataframe/column.h"
+#include "../dataframe/row.h"
 #include "../dataframe/schema.h"
 #include "../dataframe/dataframe.h"
 #include "../serializer/serial.h"

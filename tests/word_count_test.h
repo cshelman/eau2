@@ -119,7 +119,7 @@ public:
 
   void print() {
     for (auto const &count : *word_counts) {
-      printf("%s\t|   count: %d\n", count.first.c_str(), count.second);
+      printf("%d\t|\t%s\n", count.second, count.first.c_str());
     }
   }
 };

@@ -5,6 +5,7 @@
 #include "node.h"
 #include "key.h"
 #include "fake_network.h"
+#include "message.h"
 #include "../serializer/buffer.h"
 #include "../serializer/serial.h"
 #include <string>
