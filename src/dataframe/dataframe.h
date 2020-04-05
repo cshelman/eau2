@@ -79,7 +79,6 @@ public:
       * is external, and appears as the last column of the dataframe, the
       * name is optional and external. A nullptr column is undefined. */
     void add_column(Column* col) {
-      // Column* copy = new Column(col);
       col_arr->push_back(col->copy());
       schema_->add_column(col->get_type());
     }    
@@ -147,14 +146,9 @@ public:
     void fill_row(size_t idx, Row& row) {
       for (int i = 0; i < col_arr->size(); i++) {
         char t = schema_->col_type(i);
-        // printf("filling row of type: %c\n", t);
         switch (t) {
           case 'S': {
             StringColumn* string_col = col_arr->at(i)->as_string();
-            // if (string_col->get(idx) != nullptr) {
-            //   printf("filling row with: %s\n", string_col->get(idx)->c_str());
-            // }
-            // printf("setting: %ld\n", string_col->get(idx)->size());
 
             row.set(i, string_col->get(idx));
             break;

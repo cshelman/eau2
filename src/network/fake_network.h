@@ -101,9 +101,7 @@ public:
     Message* recv_master() {
         Message* temp = master_queue->pop();
         if (temp != nullptr) {
-            // printf("recv_master() popping: `%s`\n", temp->contents);
         }
         return temp;
-        // return master_queue->pop();
     }
 };

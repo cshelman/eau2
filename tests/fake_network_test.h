@@ -26,9 +26,6 @@ void fake_network_callback(size_t node_id) {
         }
 
         if (recv->type == MsgType::Put) {
-            //printf("node %ld received: %s\n\n", node_id, recv->contents);
-            //printf("msg so far: %s\n", put_msg->c_str());
-
             if (strcmp(recv->contents, "END") == 0) {
                 node.put(recv->key, (char*)put_msg->c_str());
                 *put_msg = "";
@@ -39,7 +36,6 @@ void fake_network_callback(size_t node_id) {
         }
         else if (recv->type == MsgType::Get) {
             char* contents = node.get(recv->key);
-            // printf("node sending back contents: `%s`\n", contents);
             Message* ret_msg = new Message(MsgType::Put, recv->key, contents);
             net->send_master(ret_msg);
             delete ret_msg;

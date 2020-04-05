@@ -23,22 +23,18 @@ public:
     }
 
     void shutdown() {
-        // printf("\tMaster attempting to shutdown network (%ld)...\n", net->num_nodes);
         string name = "";
         Message* kill_msg = new Message(MsgType::Kill, new Key(name));
         for (int i = 0; i < net->num_nodes; i++) {
-            // printf("\t\tSent kill msg to %d...\n", i);
             net->send_msg(i, kill_msg);
         }
     }
 
     DataFrame* get(Key* key) {
         Message* msg = new Message(MsgType::Get, key);
-        // printf("Starting to pull from nodes...\n");
 
         vector<Column*>* df_cols = new vector<Column*>();
         for (size_t i = 0; i < net->num_nodes; i++) {
-            // printf("About to poll node %ld\n", i);
             mtx.lock();
             net->send_msg(i, msg);
             mtx.unlock();
@@ -49,12 +45,8 @@ public:
                     continue;
                 }
                 else {
-                    // printf("Server received from node %ld: `%s`\n", i, ret_msg->contents);
-                    // printf("server recieved `%s` from %ld\n", ret_msg->contents, i);
                     vector<Column*>* node_cols = deserialize_col_vector(ret_msg->contents);
-                    // df_cols->insert(df_cols->end(), node_cols->begin(), node_cols->end());
                     for (int j = 0; j < node_cols->size(); j++) {
-                        // printf("%d: ADDING COLUMN\n", i);
                         df_cols->push_back(node_cols->at(j));
                     }
                     delete ret_msg;
@@ -93,21 +85,17 @@ public:
                 col_arr->erase(col_arr->begin());
             }
 
-            // printf("Server putting %ld cols\n", cols_to_send->size());
-
             // serialize columns
             string val = serialize_col_vector(cols_to_send);
             delete cols_to_send;
 
             // send serialized package
-            // Message* msg = new Message(MsgType::Put, key, (char*)val.c_str());
             vector<Message*>* messages = net->parse_msg(MsgType::Put, key, (char*)val.c_str());
             for (int j = 0; j < messages->size(); j++) {
                 net->send_msg(i, messages->at(j));
             }
             
             delete messages;
-            // delete msg;
         }
         delete col_arr;
     }

@@ -34,9 +34,6 @@ DataFrame* parse_file(string filename) {
     StringColumn* sc = new StringColumn();
     while (file >> word) {        
         if (row_count >= col_len) {
-        //   string serial = serialize_str_vector(sc->arr);
-        //   printf("serialized column: %s\n\n", serial.c_str());
-        //   printf("adding column with size %ld\n", sc->size());
           df->add_column(sc);
           delete sc;
           sc = new StringColumn();
@@ -51,7 +48,6 @@ DataFrame* parse_file(string filename) {
         }
 
         String* s = new String((char*)str->c_str());
-        // printf("pushing %s (%ld)\n", s->c_str(), s->size());
         sc->push_back(s);
         delete str;
         delete s;
@@ -63,11 +59,7 @@ DataFrame* parse_file(string filename) {
     while (sc->size() < col_len) {
       sc->push_back(test);
     }
-    // string serial = serialize_str_vector(sc->arr);
-    // printf("serialized column: %s\n\n", serial.c_str());
-    // printf("adding column with size %ld\n", sc->size());
     df->add_column(sc);
-    // string aa = serialize_col_vectordf->col_arr;
     delete sc;
 
     return df;
@@ -105,7 +97,6 @@ public:
         word_counts->at(count.first) = word_counts->at(count.first) + count.second;
       }
       else {
-        // string* ns = new string(count.first.c_str());
         word_counts->insert({count.first, count.second});
       }
     }

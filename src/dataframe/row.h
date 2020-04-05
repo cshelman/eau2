@@ -107,12 +107,10 @@ public:
 
     /** Acquire ownership of the string. */
     void set(size_t col, String* val) {
-      // printf("string_arr size: %ld, col size: %ld\n", string_arr->size(), col);
       if (val == nullptr) {
         string_arr->at(col) = nullptr;
       }
       else {
-        // printf("setting to val: %s\n", val->c_str());
         string_arr->at(col) = val->clone();
       }
     }

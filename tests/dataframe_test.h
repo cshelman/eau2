@@ -19,12 +19,10 @@ void test_dataframe_basic() {
 
     DataFrame df(*s);
 
-    for(size_t i = 0; i < 1000 * 1000; i++) {
-      // printf("starting row: %lu\n", i);
+    for (size_t i = 0; i < 1000 * 1000; i++) {
       Row* row = new Row(df.get_schema());
-      for(size_t j = 0; j < 100; j++) {
-        // printf("\tstarting item: %lu\n", j);
-        if(types[j%4] == 'I') {
+      for (size_t j = 0; j < 100; j++) {
+        if (types[j%4] == 'I') {
           row->set(j,(int)(j + i));
         } else if(types[j%4] == 'F') {
           row->set(j, (float)(j + i));
@@ -40,7 +38,6 @@ void test_dataframe_basic() {
       delete row;
     }
     
-    // df.print();
     delete[] col_types;
     delete[] types;
     delete s;

@@ -8,13 +8,13 @@
 
 using namespace std;
 
-//serialize column vector
-//serialize vectors of string, int, float, bool
-//serialize string, int, float, bool
+// serialize column vector
+// serialize vectors of string, int, float, bool
+// serialize string, int, float, bool
 
-//COLUMN:
-//{val1, val2, val3}
-//{{val1, val2, val3}, {val1, val2, val3}, {val1, val2, val3}}
+// COLUMN:
+// {val1, val2, val3}
+// {{val1, val2, val3}, {val1, val2, val3}, {val1, val2, val3}}
 
 string serialize_int(int i) {
     return to_string(i);
@@ -59,7 +59,6 @@ string serialize_str_vector(vector<String*>* vs) {
         }
     }
     serialized_vector += "}";
-    // printf("serialized_vector: %s\n", serialized_vector.c_str());
     return serialized_vector;
 }
 
@@ -239,28 +238,23 @@ vector<Column*>* deserialize_col_vector(char* s) {
         }
 
         string type = token.substr(0, 1);
-        // printf("type: %s\n", type.c_str());
         
         if (type == "I") {
-            // printf("int col: %s\n", token.substr(3, token.size() - 3).c_str());
             vector<int>* vi = deserialize_int_vector((char*)token.substr(3, token.size() - 3).c_str());
             IntColumn* ic = new IntColumn();
             ic->arr = vi;
             vc->push_back(ic);
         } else if (type == "F") {
-            // printf("float col: %s\n", token.substr(3, token.size() - 3).c_str());
             vector<float>* vf = deserialize_float_vector((char*)token.substr(3, token.size() - 3).c_str());
             FloatColumn* fc = new FloatColumn();
             fc->arr = vf;
             vc->push_back(fc);
         } else if (type == "S") {
-            // printf("string col: %s\n", token.substr(3, token.size() - 3).c_str());
             vector<String*>* vs = deserialize_str_vector((char*)token.substr(3, token.size() - 3).c_str());
             StringColumn* sc = new StringColumn();
             sc->arr = vs;
             vc->push_back(sc);
         } else if (type == "B") {
-            // printf("bool col: %s\n", token.substr(3, token.size() - 3).c_str());
             vector<bool>* vb = deserialize_bool_vector((char*)token.substr(3, token.size() - 3).c_str());
             BoolColumn* bc = new BoolColumn();
             bc->arr = vb;
