@@ -4,7 +4,7 @@
 #include "../dataframe/column.h"
 #include "node.h"
 #include "key.h"
-#include "fake_network.h"
+#include "network_server.h"
 #include "message.h"
 #include "../serializer/serial.h"
 #include <string>
@@ -13,31 +13,34 @@
 
 using namespace std;
 
-class M
-
 class Server {
 public:
-    FakeNetwork* net;
+    NetworkServer* net;
     mutex mtx;
 
-    Server(FakeNetwork* network) {
+    Server(NetworkServer* network) {
         net = network;
+        net->startup();
+        net->registration();
     }
 
     void shutdown() {
-        string name = "";
-        Message* kill_msg = new Message(MsgType::Kill, new Key(name));
+        string name = "KILL";
+        Message* kill_msg = new Message(MsgType::Kill, new Key(name), (char*)"KILL");
         for (int i = 0; i < net->num_nodes; i++) {
             net->send_msg(i, kill_msg);
         }
+        net->shutdown();
     }
 
     DataFrame* get(Key* key) {
-        Message* msg = new Message(MsgType::Get, key);
+        // printf("\n\n\nSTARTING GET in server\n\n\n");
+        Message* msg = new Message(MsgType::Get, key, (char*)"GET");
 
         vector<Column*>* df_cols = new vector<Column*>();
         for (size_t i = 0; i < net->num_nodes; i++) {
             mtx.lock();
+            // printf("\nsending get for %s\n", (char*)key->name.c_str());
             net->send_msg(i, msg);
             mtx.unlock();
             while (1) {
@@ -63,6 +66,7 @@ public:
         for (int i = 0; i < df_cols->size(); i++) {
             df->add_column(df_cols->at(i));
         }
+        // printf("\n\nDONE WITH GET in server\n\n\n");
         return df;
     }
 
@@ -92,14 +96,43 @@ public:
             delete cols_to_send;
 
             // send serialized package
-            vector<Message*>* messages = net->parse_msg(MsgType::Put, key, (char*)val.c_str());
+            vector<Message*>* messages = parse_msg(MsgType::Put, key, (char*)val.c_str());
             for (int j = 0; j < messages->size(); j++) {
                 net->send_msg(i, messages->at(j));
+                // printf("\nsending put: %s\n", messages->at(j)->contents);
             }
             
             delete messages;
         }
         delete col_arr;
+    }
+
+    vector<Message*>* parse_msg(MsgType type, Key* key, char* s) {
+        vector<Message*>* messages = new vector<Message*>();
+        string* str = new string(s);
+        int chunk_size = 5000;
+        if (str->size() < chunk_size) {
+            chunk_size = str->size() - 1;
+        }
+        int start = 0;
+        int end = chunk_size;
+
+        while (true) {
+            Message* msg = new Message(type, key, (char*)str->substr(start, end - start).c_str());
+            messages->push_back(msg);
+
+            if (end == str->size() - 1) {
+                break;
+            }
+            start = end;
+            end += chunk_size;
+            if (end > str->size()) {
+                end = str->size() - 1;
+            }
+        }
+        Message* end_msg = new Message(type, key, (char*)"END");
+        messages->push_back(end_msg);
+        return messages;
     }
     
     DataFrame* wait_and_get(Key key) {}

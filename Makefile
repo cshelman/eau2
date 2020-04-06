@@ -37,6 +37,18 @@ build_word_count:
 run_word_count: build_word_count
 	./test_word_count.out
 
+build_server:
+	g++ -g -std=c++11 tests/test_server.cpp -o test_server.out -lpthread
+
+run_server: build_server
+	./test_server.out 127.0.0.1:8080 1
+
+build_client:
+	g++ -g -std=c++11 tests/test_client.cpp -o test_client.out -lpthread
+
+run_client: build_client
+	./test_client.out 127.0.0.11:8081 127.0.0.1:8080
+
 clean:
 	rm *.out
 

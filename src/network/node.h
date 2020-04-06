@@ -29,6 +29,7 @@ public:
     char* get(Key* key) {
         if (pairs->count(key->name) > 0) {
             DataFrame* df = pairs->at(key->name);
+            
             string* temp = new string(serialize_col_vector(df->col_arr));
             char* val = new char[temp->size() + 1];
             strcpy(val, temp->c_str());
@@ -38,6 +39,7 @@ public:
             return val;
         }
         else {
+            // printf("node did not contain key: %s\n", (char*)key->name.c_str());
             return (char*)"";
         }
     }
@@ -48,6 +50,8 @@ public:
             printf("Did not add new value\n");
         }
         else {
+            // printf("putting in df\n");
+            //printf("received data: %s\n", data);
             vector<Column*>* col_arr = deserialize_col_vector(data);
 
             Schema* schema = new Schema();
@@ -57,7 +61,9 @@ public:
                 df->add_column(col_arr->at(i));
             }
             
+            // printf("put key: %s\n", (char*)key->name.c_str());
             pairs->insert({key->name, df});
+            // printf("done with put in node\n");
         }
     }
 };

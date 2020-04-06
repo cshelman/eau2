@@ -1,221 +1,168 @@
-// #pragma once
+#pragma once
 
-// #include <string.h>
-// #include <stdio.h>
-// #include <unistd.h>
-// #include <sys/types.h>
-// #include <sys/socket.h>
-// #include <netdb.h>
-// #include <stdlib.h>
-// #include <netinet/in.h>
-// #include <arpa/inet.h>
-// #include <assert.h>
-// #include <poll.h>
-// #include <thread>
-// #include <vector>
-// #include <algorithm>
+#include "node.h"
 
-// #include <errno.h>
+#include <string.h>
+#include <stdio.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netdb.h>
+#include <stdlib.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <assert.h>
+#include <poll.h>
+#include <thread>
+#include <vector>
+#include <algorithm>
 
-// using namespace std;
+#include <errno.h>
 
-// #define BUFFER_SIZE 4096
+using namespace std;
 
-// class Client {
-// public:
-//     char* ip;
-//     char* port;
-//     char* address;
-//     const char* server_ip;
-//     const char* server_port;
-//     vector<char*>* neighbor_ips;
-//     vector<char*>* neighbor_sockets;
-//     thread** neighbor_threads;
-//     struct sockaddr_in client;
-//     int clientlen;
-//     int server_sock;
+#define BUFFER_SIZE 4096
 
-//     Client(char* address_in, char* server_address) {
-//         address = new char[strlen(address_in) + 1];
-//         strcpy(address, address_in);
+class Client {
+public:
+    char* ip;
+    char* port;
+    char* address;
+    const char* server_ip;
+    const char* server_port;
+    struct sockaddr_in client;
+    int clientlen;
+    int server_sock;
+    Node* node;
 
-//         ip = strtok(address_in, ":");
-//         port = strtok(NULL, ":");
-//         neighbor_ips = new vector<char*>();
-//         neighbor_sockets = new vector<char*>();
+    Client(char* address_in, char* server_address) {
+        address = new char[strlen(address_in) + 1];
+        strcpy(address, address_in);
 
-//         client.sin_family = AF_INET;
-//         client.sin_port = htons(atoi(port));
-//         assert(inet_pton(AF_INET, ip, &client.sin_addr) > 0);
-//         clientlen = sizeof(client);
+        ip = strtok(address_in, ":");
+        port = strtok(NULL, ":");
 
-//         server_ip = strtok(server_address, ":");
-//         server_port = strtok(NULL, ":");
+        client.sin_family = AF_INET;
+        client.sin_port = htons(atoi(port));
+        assert(inet_pton(AF_INET, ip, &client.sin_addr) > 0);
+        clientlen = sizeof(client);
 
-//         neighbor_threads = new thread*[512];
-//     }
+        server_ip = strtok(server_address, ":");
+        server_port = strtok(NULL, ":");
+    }
 
-//     ~Client() {
-//         delete neighbor_ips;
-//         delete neighbor_sockets;
-//     }
+    ~Client() {
+    }
 
-//     // create connection with server
-//     void register_ip() {
-//         struct sockaddr_in to_serv;
-//         assert((server_sock = socket(AF_INET, SOCK_STREAM, 0)) >= 0);
-//         to_serv.sin_family = AF_INET;
-//         to_serv.sin_port = htons(atoi(server_port));
-//         assert(inet_pton(AF_INET, server_ip, &to_serv.sin_addr) > 0);
-//         assert(connect(server_sock, (struct sockaddr*)&to_serv, sizeof(to_serv)) >= 0);
+    // create connection with server
+    void register_ip() {
+        struct sockaddr_in to_serv;
+        assert((server_sock = socket(AF_INET, SOCK_STREAM, 0)) >= 0);
+        to_serv.sin_family = AF_INET;
+        to_serv.sin_port = htons(atoi(server_port));
+        assert(inet_pton(AF_INET, server_ip, &to_serv.sin_addr) > 0);
+        assert(connect(server_sock, (struct sockaddr*)&to_serv, sizeof(to_serv)) >= 0);
 
-//         int sent_bytes = 0;
-//         while (sent_bytes < sizeof(address) / sizeof(char)) {
-//             int ret;
-//             assert((ret = send(server_sock, address, strlen(address) + 1, 0)) >= 0);
-//             sent_bytes += ret;
-//         }
-//     }
+        int sent_bytes = 0;
+        while (sent_bytes < sizeof(address) / sizeof(char)) {
+            int ret;
+            assert((ret = send(server_sock, address, strlen(address) + 1, 0)) >= 0);
+            sent_bytes += ret;
+        }
+    }
 
-//     void send_message(char* buffer) {
-//         for (int i = 0; i < neighbor_sockets->size(); i++) {
-//             printf("sending %s to %s(%s)\n", buffer, neighbor_ips->at(i), neighbor_sockets->at(i));
-//             send(atoi(neighbor_sockets->at(i)), buffer, strlen(buffer) + 1, 0);
-//         }
-//     }
+    void send_message(Key* key, char* contents) {
+        Message* msg = new Message(MsgType::Put, key, contents);
+        string serialized_msg = serialize_message(msg);
+        char* encoded_msg = encode(serialized_msg);
+        send(server_sock, encoded_msg, strlen(encoded_msg) + 1, 0);
+    }
 
-//     vector<char*>* decode(char* s, int bytes_read) {
-//         vector<char*>* decoded_strings = new vector<char*>();
-//         int start = 0;
-//         bool in_msg = false;
+    vector<string>* decode(char* s, int bytes_read) {
+        vector<string>* decoded_strings = new vector<string>();
+        int start = 0;
+        bool in_msg = false;
+        int tic_counter = 0;
 
-//         for (int i = 0; i < bytes_read; i++) {
-//             if (s[i] == '`') {
-//                 if (in_msg) {
-//                     char* decoded = new char[i - start + 1];
-//                     memcpy(decoded, s + start, i - start);
-//                     decoded_strings->push_back(decoded);
-//                     delete[] decoded;
-//                 }
-//                 else {
-//                     start = i + 1;
-//                 }
-//                 in_msg = !in_msg;
-//             }
-//         }
-//         return decoded_strings;
-//     }
+        for (int i = 0; i < bytes_read; i++) {
+            if (s[i] == '`') {
+                tic_counter ++;
+                if (in_msg && tic_counter == 3) {
+                    char* decoded = new char[i - start - 1];
+                    memcpy(decoded, s + start, i - start - 2);
+                    string str(decoded);
+                    decoded_strings->push_back(str);
+                    delete[] decoded;
+                    tic_counter = 0;
+                }
+                else if (tic_counter == 3) {
+                    start = i + 1;
+                }
+                in_msg = !in_msg;
+            }
+            else {
+                tic_counter = 0;
+            }
+        }
+        return decoded_strings;
+    }
 
-//     void create_neighbor_connection(char* neighbor_port, char* neighbor_ip) {
-//         // creating input socket
-//         struct sockaddr_in neigh;
+    // backticks are not a valid character to send
+    char* encode(string s) {
+        string* encoded_s = new string("```");
+        encoded_s->append(s);
+        encoded_s->append("```");
+        return (char*)encoded_s->c_str();
+    }
 
-//         neigh.sin_family = AF_INET;
-//         neigh.sin_port = htons(atoi(neighbor_port));
-//         assert(inet_pton(AF_INET, ip, &neigh.sin_addr) > 0);
-//         int neighlen = sizeof(neigh);
-
-//         int yes = 1;
-//         int listen_sock;
-//         assert((listen_sock = socket(AF_INET, SOCK_STREAM, 0)) > 0);
-//         assert(setsockopt(listen_sock, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &yes, sizeof(yes)) >= 0);
-//         assert(bind(listen_sock, (struct sockaddr*)&neigh, neighlen) >= 0);
-//         assert(listen(listen_sock, 10) >= 0);
-
-//         int read_sock;
-//         assert((read_sock = accept(listen_sock, (struct sockaddr*)&neigh,(socklen_t*)&neighlen)) >= 0);
-
-        
-//         while (true) {
-
-//             char* buffer = new char[BUFFER_SIZE];
-//             memset(buffer, '\0', BUFFER_SIZE);
-//             int bytes_read = read(read_sock, buffer, BUFFER_SIZE);
-//             vector<char*>* decoded_strings = decode(buffer, bytes_read);
-
-//             for (int i = 0; i < decoded_strings->size(); i++) {
-//                 printf("[%s]: %s\n", neighbor_ip, decoded_strings->at(i));
-//             }
-//             delete decoded_strings;
-//             delete[] buffer;
-//         }
-//     }
-
-//     // backticks are not a valid character to send
-//     char* encode(char* s) {
-//         char* encoded_s = new char[strlen(s) + 3];
-//         strcpy(encoded_s, "`");
-
-//         char parsed_s[strlen(s)];
-//         memcpy(parsed_s, &s[0], strlen(s) - 1);
-//         parsed_s[strlen(s) - 1] = '\0';
-
-//         encoded_s = strcat(encoded_s, parsed_s);
-//         encoded_s = strcat(encoded_s, "`");
-//         return encoded_s;
-//     }
-
-//     void communicate_with_neighbor() {
-//         while(true) {
-//             char* buffer = new char[BUFFER_SIZE];
-//             fgets(buffer, BUFFER_SIZE, stdin);
-
-//             for (int i = 0; i < neighbor_sockets->size(); i++) {
-//                 char* encoded = encode(buffer);
-//                 int sent = send(atoi(neighbor_sockets->at(i)), encoded, strlen(encoded) + 1, 0);
-//             }
-//         }
-//     }
-
-//     void be_client() {
-//         thread* communicate_thread = new thread(&Client::communicate_with_neighbor, this);
+    void be_client() {
+        char* node_id = new char[8];
+        memset(node_id, '\0', 8);
+        read(server_sock, node_id, BUFFER_SIZE);
+        node = new Node(atoi(node_id));
        
-//         while (true) {
+        string* put_msg = new string("");
+        while (true) {
 
-//             char* buffer = new char[BUFFER_SIZE];
-//             memset(buffer, '\0', BUFFER_SIZE);
-//             int bytes_read = read(server_sock, buffer, BUFFER_SIZE);
-//             vector<char*>* decoded_strings = decode(buffer, bytes_read);
+            char* buffer = new char[BUFFER_SIZE];
+            memset(buffer, '\0', BUFFER_SIZE);
 
-//             for (int i = 0; i < decoded_strings->size(); i++) {
+            int bytes_read = recv(server_sock, buffer, BUFFER_SIZE, 0);
+            // printf("just received\n");
+            vector<string>* decoded_strings = decode(buffer, bytes_read);
 
-//                 if (count(neighbor_ips->begin(), neighbor_ips->end(), decoded_strings->at(i)) > 0 && strcmp(decoded_strings->at(i), address) != 0) {
-
-//                     neighbor_ips->push_back(decoded_strings->at(i));
-                    
-//                     char* cur_ip = strtok(decoded_strings->at(i), ":");
-//                     char* cur_port = strtok(NULL, ":");
-
-//                     // thread to listen
-//                     thread* neighbor_thread = new thread(&Client::create_neighbor_connection, this, cur_port, cur_ip);
-                    
-//                     struct sockaddr_in to_neigh;
-//                     int neigh_sock;
-//                     assert((neigh_sock = socket(AF_INET, SOCK_STREAM, 0)) >= 0);
-//                     to_neigh.sin_family = AF_INET;
-//                     to_neigh.sin_port = htons(atoi(port));
-//                     assert(inet_pton(AF_INET, cur_ip, &to_neigh.sin_addr) > 0);
-
-//                     while (connect(neigh_sock, (struct sockaddr*)&to_neigh, sizeof(to_neigh)) < 0) {}
-
-                    
-//                     char* temp = new char[8];
-//                     sprintf(temp, "%d", neigh_sock);
-//                     neighbor_sockets->push_back(temp);
-//                     printf("%s:%s has joined the network\n", cur_ip, cur_port);
-//                     delete[] temp;
-//                 }
-//             }
-//             delete decoded_strings;
-//             delete[] buffer;
-//         }
-
-//         for (int i = 0; i < neighbor_ips->size(); i++) {
-//             neighbor_threads[i]->join();
-//         }
-
-//         for (int i = 0; i < neighbor_sockets->size(); i++) {
-//             close(atoi(neighbor_sockets->at(i)));
-//         }
-//     }
-// };
+            for (int i = 0; i < decoded_strings->size(); i++) {
+                // printf("new string %s\n", (char*)decoded_strings->at(i).c_str());
+                Message* msg = deserialize_message((char*)decoded_strings->at(i).c_str());
+                if (msg->type == MsgType::Act) {
+                    //does rower stuff
+                }
+                else if (msg->type == MsgType::Get) {
+                    // printf("client recv GET msg\n");
+                    char* df = node->get(msg->key);
+                    // printf("sending\n");
+                    send_message(msg->key, df);
+                    // printf("DONNNE\n");
+                }
+                else if (msg->type == MsgType::Put) {
+                    if (strcmp(msg->contents, "END") == 0) {
+                        node->put(msg->key, (char*)put_msg->c_str());
+                        *put_msg = "";
+                    }
+                    else {
+                        put_msg->append(msg->contents);
+                    }
+                }
+                else if (msg->type == MsgType::Kill) {
+                    delete decoded_strings;
+                    delete[] buffer;
+                    return;
+                }
+                delete msg;
+            }
+            
+            delete decoded_strings;
+            delete[] buffer;
+        }
+    }
+};

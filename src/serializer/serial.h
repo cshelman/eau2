@@ -230,7 +230,7 @@ vector<Column*>* deserialize_col_vector(char* s) {
         pos = str->find("},", prev_pos);
         string token;
         if (pos == string::npos) {
-            token = str->substr(prev_pos + 1, str->size() - prev_pos - 2);
+            token = str->substr(prev_pos + 1, str->size() - prev_pos - 1);
         }
         else {
             token = str->substr(prev_pos + 1, pos - prev_pos);
