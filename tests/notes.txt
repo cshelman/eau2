@@ -1,1 +1,16 @@
 eventually change get to send a list of messages like the put
+
+Network should run on a different process, it's really a message broker
+
+so on different processes:
+ - server
+ - message broker 
+ - clients
+
+server sends to message broker
+message broker adds to the queue
+clients send recv messages to broker? or somehow receives
+
+
+todo_list:
+    integrate networking

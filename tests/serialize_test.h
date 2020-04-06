@@ -1,11 +1,13 @@
 #pragma once
 
-#include "../src/serializer/buffer.h"
 #include "../src/serializer/serial.h"
 #include "../src/dataframe/column.h"
 #include "../src/dataframe/dataframe.h"
+#include "../src/network/key.h"
+#include "../src/network/message.h"
+#include <string.h>
 
-#define VEC_SIZE 1000000
+#define VEC_SIZE 10000
 
 void test_string() {
     String* s1 = new String("string one");
@@ -125,6 +127,21 @@ void test_col_vector() {
     delete col_arr;
 }
 
+void test_message() {
+    Key* k1 = new Key("key_name");
+    Message* m1 = new Message(MsgType::Get, k1, (char*)"different contents now 123123123");
+    string sm1 = serialize_message(m1);
+    Message* m2 = deserialize_message((char*)sm1.c_str());
+
+    assert(m1->type == m2->type);
+    assert(m1->key->name == m2->key->name);
+    assert(strcmp(m1->contents, m2->contents) == 0);
+
+    delete k1;
+    delete m1;
+    delete m2;
+}
+
 void test_serialize() {
     // test primitives
     test_string();
@@ -139,6 +156,9 @@ void test_serialize() {
 
     // test column vector
     test_col_vector();
+
+    // test messages
+    test_message();
 
     printf("serialize test: SUCCESS\n");
 }

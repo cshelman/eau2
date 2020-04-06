@@ -6,7 +6,6 @@
 #include "../dataframe/schema.h"
 #include "../dataframe/dataframe.h"
 #include "../serializer/serial.h"
-#include "../serializer/buffer.h"
 #include <unordered_map>
 #include <string>
 #include <stdio.h>

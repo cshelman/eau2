@@ -6,12 +6,14 @@
 #include "key.h"
 #include "fake_network.h"
 #include "message.h"
-#include "../serializer/buffer.h"
 #include "../serializer/serial.h"
 #include <string>
 #include <mutex>
+#include <vector>
 
 using namespace std;
+
+class M
 
 class Server {
 public:

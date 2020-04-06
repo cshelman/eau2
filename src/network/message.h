@@ -1,6 +1,5 @@
 #pragma once
 
-#include "server.h"
 #include "key.h"
 #include <string>
 #include <queue>

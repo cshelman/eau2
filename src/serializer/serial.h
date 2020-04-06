@@ -4,7 +4,7 @@
 #include <string.h>
 #include <string>
 
-#include "buffer.h"
+#include "../network/message.h"
 
 using namespace std;
 
@@ -262,4 +262,67 @@ vector<Column*>* deserialize_col_vector(char* s) {
         }
     }
     return vc;
+}
+
+string serialize_msg_type(MsgType type) {
+    return serialize_int((int)type);
+}
+
+MsgType deserialize_msg_type(char* s) {
+    MsgType type = (MsgType)deserialize_int(s);
+    return type;
+}
+
+string serialize_message(Message* msg) {
+    string* serialized_msg = new string("{");
+    serialized_msg->append("``");
+    serialized_msg->append(serialize_msg_type(msg->type));
+    serialized_msg->append("``,``");
+    serialized_msg->append(msg->key->name);
+    serialized_msg->append("``,``");
+    serialized_msg->append(msg->contents);
+    serialized_msg->append("``}");
+
+    return *serialized_msg;
+}
+
+Message* deserialize_message(char* s) {
+    string* str = new string(s);
+    MsgType type;
+    char* name;
+    char* contents;
+    
+    int part = 0;
+    int prev_pos = 0;
+    int pos = 0;
+    while (pos != string::npos) {
+        pos = str->find("``,", prev_pos);
+        string token;
+        if (pos == string::npos) {
+            token = str->substr(prev_pos + 3, str->size() - prev_pos - 6);
+        }
+        else {
+            token = str->substr(prev_pos + 3, pos - prev_pos - 3);
+            prev_pos = pos + 2;
+        }
+
+        if (part == 0) {
+            type = deserialize_msg_type((char*)token.c_str());
+        } else if (part == 1) {
+            name = new char[token.size() + 1];
+            strcpy(name, (char*)token.c_str());
+        } else if (part == 2) {
+            contents = new char[token.size() + 1];
+            strcpy(contents, (char*)token.c_str());
+        }
+        
+        part += 1;
+    }
+    
+    Key* key = new Key(name);
+    Message* msg = new Message(type, key, contents);
+    delete name;
+    delete contents;
+    delete key;
+    return msg;
 }
