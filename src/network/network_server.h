@@ -17,10 +17,12 @@
 #include <sys/socket.h>
 #include <thread>
 #include <vector>
+#include <sstream>
+#include <iomanip>
 
 #include <errno.h>
 
-#define BUFFER_SIZE 4096
+#define NET_BUF_SIZE 8192
 
 using namespace std;
 
@@ -62,15 +64,18 @@ public:
 
     // backticks are not a valid character to send
     char* encode(string s) {
-        string* encoded_s = new string("```");
-        encoded_s->append(s);
-        encoded_s->append("```");
+        // string* encoded_s = new string("```");
+        // encoded_s->append(s);
+        // encoded_s->append("```");
+        // return (char*)encoded_s->c_str();
+        
+        stringstream ss;
+        ss << setw(4) << setfill('0') << (s.size() + 1);
+        string* result = new string(ss.str());
+        result->append(s);
+        // printf("encoded string: %s\n", (char*)result->c_str());
 
-        char* ret = new char[encoded_s->size()];
-        memcpy(ret, encoded_s->c_str(), encoded_s->size());
-
-        delete encoded_s;
-        return ret;
+        return (char*)result->c_str();
     }
 
     vector<string>* decode(char* s, int bytes_read) {
@@ -115,23 +120,35 @@ public:
         string s = serialize_message(msg);
         // printf("message: %s\n", (char*)s.c_str());
         char* encoded = encode(s);
-        // printf("encoded message: %s\n", encoded);
+        printf("net_server encoded message: %s\n", encoded);
         int bytes = send(atoi(client_sockets->at(node)), encoded, strlen(encoded) + 1, 0);
     }
 
-    void listening(char* client_sock, bool* alive) {
-        while(alive) {
-            string* buffer = new string();
-            char temp_buffer[BUFFER_SIZE];
-            
-            int status = recv(atoi(client_sock), temp_buffer, BUFFER_SIZE, 0);
-            buffer->append(temp_buffer);
-            
-            vector<string>* vs = decode((char*)buffer->c_str(), status);
-            for (int i = 0; i < vs->size(); i++) {
-                Message* msg = deserialize_message((char*)vs->at(i).c_str());
+    void listening(char* client_sock) {
+        while(true) {
+            char* size = new char[4];
+
+            recv(atoi(client_sock), size, 4, 0);
+            int bytes_read = 0;
+            // printf("size: %s\n", size);
+            int bytes_to_read = atoi(size);
+
+            if (bytes_to_read > 0) {
+                // printf("bytes to read: %d\n", bytes_read);
+                char* buffer = new char[bytes_to_read];
+                memset(buffer, '\0', bytes_to_read);
+
+                while (bytes_read < bytes_to_read) {
+                    bytes_read += recv(atoi(client_sock), buffer, bytes_to_read - bytes_read, 0);
+                }
+                
+                // printf("deserializing: %s\n", buffer);
+                Message* msg = deserialize_message((char*)buffer);
                 // printf("\nlistening recv & pushed: %s\n", msg->contents);
                 master_queue->push(msg);
+            }
+            else {
+                break;
             }
         }
     }
@@ -144,11 +161,11 @@ public:
         while (client_ips->size() < num_nodes) {
             string* buffer = new string();
             int client_sock;
-            char temp_buffer[BUFFER_SIZE];
+            char temp_buffer[NET_BUF_SIZE];
             assert((client_sock = accept(sock_fd, (struct sockaddr*)&serv,(socklen_t*)&servlen)) >= 0);
             
             int status;
-            assert((status = recv(client_sock, temp_buffer, BUFFER_SIZE, 0)) >= 0);
+            assert((status = recv(client_sock, temp_buffer, NET_BUF_SIZE, 0)) >= 0);
             buffer->append(temp_buffer);
             // printf("client %s connected\n", buffer->c_str());
 
@@ -160,9 +177,10 @@ public:
             client_sockets->push_back(num);
 
             string n = to_string(index);
-            char* encoded = encode(n);
+            // char* encoded = encode(n);
+            char* encoded = (char*)n.c_str();
             send(atoi(client_sockets->at(index)), encoded, strlen(encoded) + 1, 0);
-            ts[index] = new thread(&NetworkServer::listening, this, num, &alive);
+            ts[index] = new thread(&NetworkServer::listening, this, num);
         }
     }
 

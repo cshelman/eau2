@@ -293,11 +293,13 @@ public:
     /** This method clones the Rower and executes the map in parallel. Join is
      *  used at the end to merge the results. */
     void pmap(Rower& r) {
+        printf("starting pmap\n");
         size_t rower_rows = 128;
         size_t num_rowers = (nrows() / rower_rows) + 1;
 
         thread* threads[num_rowers];
         Rower* rowers[num_rowers];
+        printf("pmap starting up %ld rowers\n", num_rowers);
         for (int i = 0; i < num_rowers; i++) {
             if (i == 0) {
               rowers[i] = &r;

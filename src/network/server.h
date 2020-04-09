@@ -33,6 +33,13 @@ public:
         net->shutdown();
     }
 
+    void run_rower(Key* key) {
+        Message* msg = new Message(MsgType::Act, key, (char*)"ACT");
+        for (size_t i = 0; i < net->num_nodes; i++) {
+            net->send_msg(i, msg);
+        }
+    }
+
     DataFrame* get(Key* key) {
         // printf("\n\n\nSTARTING GET in server\n\n\n");
         Message* msg = new Message(MsgType::Get, key, (char*)"GET");
@@ -110,7 +117,7 @@ public:
     vector<Message*>* parse_msg(MsgType type, Key* key, char* s) {
         vector<Message*>* messages = new vector<Message*>();
         string* str = new string(s);
-        int chunk_size = 5000;
+        int chunk_size = 500;
         if (str->size() < chunk_size) {
             chunk_size = str->size() - 1;
         }

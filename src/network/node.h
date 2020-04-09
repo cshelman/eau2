@@ -26,6 +26,19 @@ public:
         delete pairs;
     }
 
+    Rower* apply(Rower* rower, Key* key) {
+        if (pairs->count(key->name) > 0) {
+            DataFrame* df = pairs->at(key->name);
+            df->pmap(*rower);
+            printf("node %ld applied rower\n", id);
+            return rower;
+        }
+        else {
+            printf("ACT: node %ld did not contain key: %s\n", id, (char*)key->name.c_str());
+            return rower;
+        }
+    }
+
     char* get(Key* key) {
         if (pairs->count(key->name) > 0) {
             DataFrame* df = pairs->at(key->name);
@@ -35,11 +48,10 @@ public:
             strcpy(val, temp->c_str());
             val[temp->size() + 1] = '\0';
 
-            delete df;
             return val;
         }
         else {
-            // printf("node did not contain key: %s\n", (char*)key->name.c_str());
+            printf("GET: node did not contain key: %s\n", (char*)key->name.c_str());
             return (char*)"";
         }
     }
@@ -51,10 +63,11 @@ public:
         }
         else {
             // printf("putting in df\n");
-            //printf("received data: %s\n", data);
+            // printf("received data: %s\n", data);
             vector<Column*>* col_arr = deserialize_col_vector(data);
 
             Schema* schema = new Schema();
+            schema->num_rows_ = col_arr->at(0)->size();
             DataFrame* df = new DataFrame(*schema);
             
             for (int i = 0; i < col_arr->size(); i++) {

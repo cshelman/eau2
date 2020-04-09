@@ -41,10 +41,17 @@ float deserialize_float(char* s) {
 }
 
 string serialize_string(String* s) {
-    return string(s->c_str());
+    if (s == nullptr) {
+        return "__NULL__";
+    } else {
+        return string(s->c_str());
+    }
 }
 
 String* deserialize_string(char* s) {
+    if (strcmp(s, "__NULL__") == 0) {
+        return nullptr;
+    }
     String* str = new String(s);
     return str;
 }
@@ -275,13 +282,13 @@ MsgType deserialize_msg_type(char* s) {
 
 string serialize_message(Message* msg) {
     string* serialized_msg = new string("{");
-    serialized_msg->append("``");
+    serialized_msg->append("`[");
     serialized_msg->append(serialize_msg_type(msg->type));
-    serialized_msg->append("``,``");
+    serialized_msg->append("]`,`[");
     serialized_msg->append(msg->key->name);
-    serialized_msg->append("``,``");
+    serialized_msg->append("]`,`[");
     serialized_msg->append(msg->contents);
-    serialized_msg->append("``}");
+    serialized_msg->append("]`}");
 
     return *serialized_msg;
 }
@@ -296,9 +303,10 @@ Message* deserialize_message(char* s) {
     int prev_pos = 0;
     int pos = 0;
     while (pos != string::npos) {
-        pos = str->find("``,", prev_pos);
+        pos = str->find("]`,", prev_pos);
         string token;
         if (pos == string::npos) {
+            // printf("token: %s\n", (char*)token.c_str());
             token = str->substr(prev_pos + 3, str->size() - prev_pos - 6);
         }
         else {
@@ -308,12 +316,15 @@ Message* deserialize_message(char* s) {
 
         if (part == 0) {
             type = deserialize_msg_type((char*)token.c_str());
+            // printf("type: %s\n", (char*)token.c_str());
         } else if (part == 1) {
             name = new char[token.size() + 1];
             strcpy(name, (char*)token.c_str());
+            // printf("name: %s\n", name);
         } else if (part == 2) {
             contents = new char[token.size() + 1];
             strcpy(contents, (char*)token.c_str());
+            // printf("contents: %s\n", contents);
         }
         
         part += 1;

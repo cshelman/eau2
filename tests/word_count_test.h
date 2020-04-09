@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../src/rowers/word_count.h"
 #include "../src/dataframe/schema.h"
 #include "../src/dataframe/dataframe.h"
 #include "../src/string.h"
@@ -16,7 +17,7 @@ using namespace std;
 //print the different words and their counts
 
 DataFrame* parse_file(string filename) {
-    int col_len = 1000;
+    int col_len = 500;
 
     Schema* s = new Schema();
     s->num_rows_ = col_len;
@@ -55,9 +56,8 @@ DataFrame* parse_file(string filename) {
         row_count++;
     } 
 
-    String* test = new String("x");
     while (sc->size() < col_len) {
-      sc->push_back(test);
+      sc->push_back(nullptr);
     }
     df->add_column(sc);
     delete sc;
@@ -65,53 +65,4 @@ DataFrame* parse_file(string filename) {
     return df;
 }
 
-class WordCountRower : public Rower {
-public:
-  map<string, int>* word_counts;
-
-  WordCountRower() {
-    word_counts = new map<string, int>();
-  }
-  
-  bool accept(Row& r) {
-    for (int i = 0; i < r.width(); i++) {
-        String* word = r.get_string(i);
-        assert(word != nullptr);
-        string* s = new string(word->c_str());
-        
-        if (word_counts->count(*s) > 0) {
-            int count = word_counts->at(*s) + 1;
-            word_counts->at(*s) = count;
-        }
-        else {
-            word_counts->insert({*s, 1});
-        }
-    }
-    return true;
-  }
-
-  void join_delete(Rower* other) {
-    WordCountRower* other_wcr = dynamic_cast<WordCountRower*>(other);
-    for (auto const &count : *other_wcr->word_counts) {
-      if (word_counts->count(count.first) > 0) {
-        word_counts->at(count.first) = word_counts->at(count.first) + count.second;
-      }
-      else {
-        word_counts->insert({count.first, count.second});
-      }
-    }
-
-    delete other;
-  }
-
-  Rower* clone() {
-    return new WordCountRower();
-  }
-
-  void print() {
-    for (auto const &count : *word_counts) {
-      printf("%d\t|\t%s\n", count.second, count.first.c_str());
-    }
-  }
-};
 
