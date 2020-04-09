@@ -62,8 +62,12 @@ public:
             printf("Did not add new value\n");
         }
         else {
-            // printf("putting in df\n");
-            // printf("received data: %s\n", data);
+            // throw away message if empty
+            if (strcmp(data, "") == 0) {
+                printf("Node received blank PUT\n");
+                return;
+            }
+            
             vector<Column*>* col_arr = deserialize_col_vector(data);
 
             Schema* schema = new Schema();

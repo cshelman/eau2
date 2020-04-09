@@ -120,7 +120,7 @@ public:
         string s = serialize_message(msg);
         // printf("message: %s\n", (char*)s.c_str());
         char* encoded = encode(s);
-        printf("net_server encoded message: %s\n", encoded);
+        // printf("net_server encoded message: %s\n", encoded);
         int bytes = send(atoi(client_sockets->at(node)), encoded, strlen(encoded) + 1, 0);
     }
 
@@ -158,6 +158,7 @@ public:
     }
 
     void registration() {
+        printf("server starting registration for %d nodes\n", num_nodes);
         while (client_ips->size() < num_nodes) {
             string* buffer = new string();
             int client_sock;
@@ -171,17 +172,17 @@ public:
 
             client_ips->push_back((char*)buffer->c_str());
 
-            char num[16];
-            sprintf(num, "%d", client_sock);
             int index = client_sockets->size();
-            client_sockets->push_back(num);
+            char* sock = new char[16];
+            strcpy(sock, (char*)to_string(client_sock).c_str());
+            client_sockets->push_back(sock);
 
-            string n = to_string(index);
-            // char* encoded = encode(n);
-            char* encoded = (char*)n.c_str();
-            send(atoi(client_sockets->at(index)), encoded, strlen(encoded) + 1, 0);
-            ts[index] = new thread(&NetworkServer::listening, this, num);
+            char* assigned_node_num = (char*)to_string(index).c_str();
+            send(atoi(client_sockets->at(index)), assigned_node_num, strlen(assigned_node_num) + 1, 0);
+            ts[index] = new thread(&NetworkServer::listening, this, sock);
+            printf("finished registering node: %s (%s)\n", assigned_node_num, sock);
         }
+        printf("client socks: %s, %s\n", client_sockets->at(0), client_sockets->at(1));
     }
 
     void shutdown() {
@@ -189,6 +190,7 @@ public:
         for (int i = 0; i < client_sockets->size(); i++) {
             ts[i]->join();
             close(atoi(client_sockets->at(i)));
+            delete[] client_sockets->at(i);
         }
     }
 };

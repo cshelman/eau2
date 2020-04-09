@@ -228,8 +228,8 @@ string serialize_col_vector(vector<Column*>* vc) {
 }
 
 vector<Column*>* deserialize_col_vector(char* s) {
-
     string* str = new string(s);
+
     vector<Column*>* vc = new vector<Column*>();
     int prev_pos = 1;
     int pos = 0;

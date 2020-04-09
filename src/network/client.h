@@ -136,6 +136,7 @@ public:
         memset(node_id, '\0', 8);
         read(server_sock, node_id, CLIENT_BUF_SIZE);
         node = new Node(atoi(node_id));
+        printf("made node #%s\n", node_id);
        
         string* put_msg = new string("");
         while (true) {
@@ -151,24 +152,25 @@ public:
                 bytes_read += recv(server_sock, buffer, bytes_to_read - bytes_read, 0);
             }
 
+            // printf("\n%s\n", buffer);
             Message* msg = deserialize_message(buffer);
             if (msg->type == MsgType::Act) {
                 node->apply(rower, msg->key);
-                printf("Word count on %ld:\n", node->id);
+                // printf("Word count on %ld:\n", node->id);
                 WordCountRower* r = dynamic_cast<WordCountRower*>(rower);
                 r->print();
             }
             else if (msg->type == MsgType::Get) {
-                printf("client recv GET msg\n");
+                // printf("client recv GET msg\n");
                 char* df = node->get(msg->key);
-                printf("sending\n");
+                // printf("sending\n");
                 send_message(msg->key, df);
-                printf("DONNNE\n");
+                // printf("DONNNE\n");
             }
             else if (msg->type == MsgType::Put) {
-                printf("cmp: %s, \"END\"\n", msg->contents);
+                // printf("cmp: %s, \"END\"\n", msg->contents);
                 if (strcmp(msg->contents, "END") == 0) {
-                    printf("end of msg, key: %s\n", (char*)msg->key->name.c_str());
+                    printf("end of msg: %s\n", (char*)put_msg->c_str());
                     node->put(msg->key, (char*)put_msg->c_str());
                     *put_msg = "";
                 }

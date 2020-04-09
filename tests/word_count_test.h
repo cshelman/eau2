@@ -8,6 +8,7 @@
 #include <fstream>
 #include <map>
 #include <string>
+#include <algorithm>
 
 using namespace std;
 
@@ -48,6 +49,7 @@ DataFrame* parse_file(string filename) {
             str->pop_back();
         }
 
+        transform(str->begin(), str->end(), str->begin(), ::tolower);
         String* s = new String((char*)str->c_str());
         sc->push_back(s);
         delete str;

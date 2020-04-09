@@ -10,16 +10,31 @@ int main(int argc, char** argv) {
     Server* s = new Server(ns);
     printf("server created\n");
 
-    DataFrame* df = parse_file("data/100k.txt");
+    DataFrame* df = parse_file("data/wc.txt");
     printf("df created\n");
+
+    char temp;
+    printf("PRESS X TO PUT...");
+    cin >> temp;
+    printf("\n");
     
     Key* k1 = new Key("one");
     s->put(k1, df);
     printf("df put\n");
+
+    printf("PRESS X TO COUNT...");
+    cin >> temp;
+    printf("\n");
+
     s->run_rower(k1);
     printf("word count run\n");
 
+    printf("PRESS X TO SHUTDOWN...");
+    cin >> temp;
+    printf("\n");
+
     s->shutdown();
+    printf("server shutdown\n");
 
     delete k1;
     delete df;

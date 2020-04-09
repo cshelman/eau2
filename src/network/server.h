@@ -78,10 +78,10 @@ public:
     }
 
     void put(Key* key, DataFrame* df) {
-        
         vector<Column*>* col_arr = new vector<Column*>(*df->col_arr);
         int min_cols_per_node = col_arr->size() / net->num_nodes;
         int rem = col_arr->size() % net->num_nodes;
+        printf("min cols: %d\n", min_cols_per_node);
 
         for (int i = 0; i < net->num_nodes; i++) {
             // calculate number of columns to send to this node
@@ -99,12 +99,16 @@ public:
             }
 
             // serialize columns
-            string val = serialize_col_vector(cols_to_send);
+            string val = "";
+            if (cols_to_send->size() > 0) {
+                val = serialize_col_vector(cols_to_send);
+            }
             delete cols_to_send;
 
             // send serialized package
             vector<Message*>* messages = parse_msg(MsgType::Put, key, (char*)val.c_str());
             for (int j = 0; j < messages->size(); j++) {
+                // printf("sending PUT msg to: %d\n", i);
                 net->send_msg(i, messages->at(j));
                 // printf("\nsending put: %s\n", messages->at(j)->contents);
             }
