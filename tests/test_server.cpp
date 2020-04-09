@@ -10,7 +10,7 @@ int main(int argc, char** argv) {
     Server* s = new Server(ns);
     printf("server created\n");
 
-    DataFrame* df = parse_file("data/wc.txt");
+    DataFrame* df = parse_file("data/100k.txt");
     printf("df created\n");
 
     char temp;

@@ -38,6 +38,20 @@ public:
         for (size_t i = 0; i < net->num_nodes; i++) {
             net->send_msg(i, msg);
         }
+
+        while (true) {
+            Message* ret_msg = net->recv_master();
+            if (ret_msg == nullptr) {
+                delete ret_msg;
+                continue;
+            }
+            else {
+                // TODO : add sendback of rower from client to here
+
+                delete ret_msg;
+                break;
+            }
+        }
     }
 
     DataFrame* get(Key* key) {
@@ -50,7 +64,7 @@ public:
             // printf("\nsending get for %s\n", (char*)key->name.c_str());
             net->send_msg(i, msg);
             mtx.unlock();
-            while (1) {
+            while (true) {
                 Message* ret_msg = net->recv_master();
                 if (ret_msg == nullptr) {
                     delete ret_msg;
