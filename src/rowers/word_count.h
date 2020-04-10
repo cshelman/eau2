@@ -85,7 +85,7 @@ public:
     int pos = str->find("`:`");
 
     if (pos == string::npos) {
-      printf("Invalid WordCountRower to deserialize.\n");
+      printf("Invalid WordCountRower to deserialize - no colon found.\n");
       exit(1);
     }
 
@@ -99,7 +99,7 @@ public:
     vector<int>* vi = deserialize_int_vector((char*)vi_as_str->c_str());
 
     if (vs->size() != vi->size()) {
-      printf("Invalid WordCountRower to deserialize.\n");
+      printf("Invalid WordCountRower to deserialize - sizes dont match.\n");
       exit(1);
     }
     

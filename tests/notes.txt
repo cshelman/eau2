@@ -1,0 +1,23 @@
+DataFrame 1 projects:
+cols: PID(int) name(string)
+
+DataFrame 2 users:
+cols: UID(int) name(string)
+
+DataFrame 3 commits:
+cols: PID(int) UID[writer](int) UID[committer](int)
+
+degrees away from linus:
+- find PIDs where linus is writer or committer
+- find all other writers and committers on those same PIDs
+
+
+
+server                      clients
+------------------------------------
+linus         ---->         
+              <----      linus PIDs
+join_delete()
+linus PIDs    ---->
+              <----      1st degreers
+              etc.

@@ -17,6 +17,14 @@ using namespace std;
 // {val1, val2, val3}
 // {{val1, val2, val3}, {val1, val2, val3}, {val1, val2, val3}}
 
+string serialize_size_t(size_t i) {
+    return to_string(i);
+}
+
+size_t deserialize_size_t(char* s) {
+    return atol(s);
+}
+
 string serialize_int(int i) {
     return to_string(i);
 }
@@ -284,6 +292,8 @@ MsgType deserialize_msg_type(char* s) {
 string serialize_message(Message* msg) {
     string* serialized_msg = new string("{");
     serialized_msg->append("`[");
+    serialized_msg->append(serialize_size_t(msg->sender));
+    serialized_msg->append("]`,`[");
     serialized_msg->append(serialize_msg_type(msg->type));
     serialized_msg->append("]`,`[");
     serialized_msg->append(msg->key->name);
@@ -296,6 +306,7 @@ string serialize_message(Message* msg) {
 
 Message* deserialize_message(char* s) {
     string* str = new string(s);
+    size_t sender;
     MsgType type;
     char* name;
     char* contents;
@@ -307,7 +318,6 @@ Message* deserialize_message(char* s) {
         pos = str->find("]`,", prev_pos);
         string token;
         if (pos == string::npos) {
-            // printf("token: %s\n", (char*)token.c_str());
             token = str->substr(prev_pos + 3, str->size() - prev_pos - 6);
         }
         else {
@@ -316,23 +326,23 @@ Message* deserialize_message(char* s) {
         }
 
         if (part == 0) {
+            sender = deserialize_size_t((char*)token.c_str());
+        }
+        if (part == 1) {
             type = deserialize_msg_type((char*)token.c_str());
-            // printf("type: %s\n", (char*)token.c_str());
-        } else if (part == 1) {
+        } else if (part == 2) {
             name = new char[token.size() + 1];
             strcpy(name, (char*)token.c_str());
-            // printf("name: %s\n", name);
-        } else if (part == 2) {
+        } else if (part == 3) {
             contents = new char[token.size() + 1];
             strcpy(contents, (char*)token.c_str());
-            // printf("contents: %s\n", contents);
         }
         
         part += 1;
     }
     
     Key* key = new Key(name);
-    Message* msg = new Message(type, key, contents);
+    Message* msg = new Message(type, key, contents, sender);
     delete name;
     delete contents;
     delete key;

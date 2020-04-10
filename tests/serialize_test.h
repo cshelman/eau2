@@ -129,7 +129,7 @@ void test_col_vector() {
 
 void test_message() {
     Key* k1 = new Key("key_name");
-    Message* m1 = new Message(MsgType::Get, k1, (char*)"different contents now 123123123");
+    Message* m1 = new Message(MsgType::Get, k1, (char*)"different contents now 123123123", -1);
     string sm1 = serialize_message(m1);
     Message* m2 = deserialize_message((char*)sm1.c_str());
 

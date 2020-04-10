@@ -81,10 +81,12 @@ public:
     }
 
     void send_message(Key* key, char* contents) {
-        Message* msg = new Message(MsgType::Put, key, contents);
-        string serialized_msg = serialize_message(msg);
-        char* encoded_msg = encode(serialized_msg);
-        send(server_sock, encoded_msg, strlen(encoded_msg) + 1, 0);
+        vector<Message*>* msgs = parse_msg(MsgType::Put, key, contents, node->id);
+        for (int i = 0; i < msgs->size(); i++) {
+            string serialized_msg = serialize_message(msgs->at(i));
+            char* encoded_msg = encode(serialized_msg);
+            send(server_sock, encoded_msg, strlen(encoded_msg) + 1, 0);
+        }
     }
 
     vector<string>* decode(char* s, int bytes_read) {
@@ -172,5 +174,33 @@ public:
             delete msg;
             delete[] buffer;
         }
+    }
+
+    vector<Message*>* parse_msg(MsgType type, Key* key, char* s, size_t sender) {
+        vector<Message*>* messages = new vector<Message*>();
+        string* str = new string(s);
+        int chunk_size = 500;
+        if (str->size() < chunk_size) {
+            chunk_size = str->size() - 1;
+        }
+        int start = 0;
+        int end = chunk_size;
+
+        while (true) {
+            Message* msg = new Message(type, key, (char*)str->substr(start, end - start).c_str(), node->id);
+            messages->push_back(msg);
+
+            if (end == str->size()) {
+                break;
+            }
+            start = end;
+            end += chunk_size;
+            if (end > str->size()) {
+                end = str->size();
+            }
+        }
+        Message* end_msg = new Message(type, key, (char*)"END", node->id);
+        messages->push_back(end_msg);
+        return messages;
     }
 };

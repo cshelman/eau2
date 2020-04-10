@@ -27,7 +27,7 @@ public:
 
     void shutdown() {
         string name = "KILL";
-        Message* kill_msg = new Message(MsgType::Kill, new Key(name), (char*)"KILL");
+        Message* kill_msg = new Message(MsgType::Kill, new Key(name), (char*)"KILL", -1);
         for (int i = 0; i < net->num_nodes; i++) {
             net->send_msg(i, kill_msg);
         }
@@ -35,26 +35,41 @@ public:
     }
 
     Rower* run_rower(Key* key, Rower* rower) {
-        Message* msg = new Message(MsgType::Act, key, (char*)"ACT");
+        Message* msg = new Message(MsgType::Act, key, (char*)"ACT", -1);
         for (size_t i = 0; i < net->num_nodes; i++) {
             net->send_msg(i, msg);
         }
 
         vector<Rower*>* rowers = new vector<Rower*>();
-
-        for (size_t i = 0; i < net->num_nodes; i++) {
-            while (true) {
-                Message* ret_msg = net->recv_master();
-                if (ret_msg == nullptr) {
-                    delete ret_msg;
-                    continue;
-                }
-                else {
-                    Rower* r = rower->deserialize(ret_msg->contents);
-                    rowers->push_back(r);
-                    delete ret_msg;
+        map<size_t, string>* response_map = new map<size_t, string>();
+        size_t end_count = 0;
+        while (true) {
+            Message* ret_msg = net->recv_master();
+            if (ret_msg == nullptr) {
+                delete ret_msg;
+                continue;
+            }
+            else if (strcmp(ret_msg->contents, "END") == 0) {
+                Rower* r = rower->deserialize((char*)response_map->at(ret_msg->sender).c_str());
+                rowers->push_back(r);
+                delete ret_msg;
+                end_count++;
+                if (end_count >= 3) {
                     break;
                 }
+            }
+            else {
+                if (response_map->count(ret_msg->sender) > 0) {
+                    string s(ret_msg->contents);
+                    response_map->at(ret_msg->sender) = response_map->at(ret_msg->sender).append(s);
+                }
+                else {
+                    string s(ret_msg->contents);
+                    response_map->insert({ret_msg->sender, s});
+                }
+                
+                delete ret_msg;
+                continue;
             }
         }
 
@@ -67,9 +82,10 @@ public:
     }
 
     DataFrame* get(Key* key) {
-        Message* msg = new Message(MsgType::Get, key, (char*)"GET");
+        Message* msg = new Message(MsgType::Get, key, (char*)"GET", -1);
 
         vector<Column*>* df_cols = new vector<Column*>();
+        map<size_t, string>* response_map = new map<size_t, string>();
         for (size_t i = 0; i < net->num_nodes; i++) {
             mtx.lock();
             net->send_msg(i, msg);
@@ -80,13 +96,25 @@ public:
                     delete ret_msg;
                     continue;
                 }
-                else {
-                    vector<Column*>* node_cols = deserialize_col_vector(ret_msg->contents);
+                else if (strcmp(ret_msg->contents, "END") == 0) {
+                    vector<Column*>* node_cols = deserialize_col_vector((char*)response_map->at(ret_msg->sender).c_str());
                     for (int j = 0; j < node_cols->size(); j++) {
                         df_cols->push_back(node_cols->at(j));
                     }
                     delete ret_msg;
                     break;
+                }
+                else {
+                    if (response_map->count(ret_msg->sender) > 0) {
+                        string s(ret_msg->contents);
+                        response_map->at(ret_msg->sender) = response_map->at(ret_msg->sender).append(s);
+                    }
+                    else {
+                        string s(ret_msg->contents);
+                        response_map->insert({ret_msg->sender, s});
+                    }
+                    delete ret_msg;
+                    continue;
                 }
             }
         }
@@ -127,7 +155,7 @@ public:
             delete cols_to_send;
 
             // send serialized package
-            vector<Message*>* messages = parse_msg(MsgType::Put, key, (char*)val.c_str());
+            vector<Message*>* messages = parse_msg(MsgType::Put, key, (char*)val.c_str(), -1);
             for (int j = 0; j < messages->size(); j++) {
                 net->send_msg(i, messages->at(j));
             }
@@ -137,7 +165,7 @@ public:
         delete col_arr;
     }
 
-    vector<Message*>* parse_msg(MsgType type, Key* key, char* s) {
+    vector<Message*>* parse_msg(MsgType type, Key* key, char* s, size_t sender) {
         vector<Message*>* messages = new vector<Message*>();
         string* str = new string(s);
         int chunk_size = 500;
@@ -148,19 +176,19 @@ public:
         int end = chunk_size;
 
         while (true) {
-            Message* msg = new Message(type, key, (char*)str->substr(start, end - start).c_str());
+            Message* msg = new Message(type, key, (char*)str->substr(start, end - start).c_str(), sender);
             messages->push_back(msg);
 
-            if (end == str->size() - 1) {
+            if (end == str->size()) {
                 break;
             }
             start = end;
             end += chunk_size;
             if (end > str->size()) {
-                end = str->size() - 1;
+                end = str->size();
             }
         }
-        Message* end_msg = new Message(type, key, (char*)"END");
+        Message* end_msg = new Message(type, key, (char*)"END", sender);
         messages->push_back(end_msg);
         return messages;
     }

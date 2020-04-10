@@ -9,7 +9,7 @@ int main(int argc, char** argv) {
     NetworkServer* ns = new NetworkServer(argv[1], atoi(argv[2]));
     Server* s = new Server(ns);
 
-    DataFrame* df = parse_file("data/100k.txt");
+    DataFrame* df = parse_file("../dict.txt");
 
     // char temp;
     // printf("PRESS X TO PUT...");

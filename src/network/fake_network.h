@@ -30,7 +30,7 @@ public:
         delete qs;
     }
 
-    vector<Message*>* parse_msg(MsgType type, Key* key, char* s) {
+    vector<Message*>* parse_msg(MsgType type, Key* key, char* s, size_t sender) {
         vector<Message*>* messages = new vector<Message*>();
         string* str = new string(s);
         int chunk_size = 5000;
@@ -38,7 +38,7 @@ public:
         int end = chunk_size;
 
         while (true) {
-            Message* msg = new Message(type, key, (char*)str->substr(start, end - start).c_str());
+            Message* msg = new Message(type, key, (char*)str->substr(start, end - start).c_str(), sender);
             messages->push_back(msg);
 
             if (end == str->size() - 1) {
@@ -50,7 +50,7 @@ public:
                 end = str->size() - 1;
             }
         }
-        Message* end_msg = new Message(type, key, (char*)"END");
+        Message* end_msg = new Message(type, key, (char*)"END", sender);
         messages->push_back(end_msg);
         return messages;
     }

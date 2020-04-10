@@ -36,7 +36,7 @@ void fake_network_callback(size_t node_id) {
         }
         else if (recv->type == MsgType::Get) {
             char* contents = node.get(recv->key);
-            Message* ret_msg = new Message(MsgType::Put, recv->key, contents);
+            Message* ret_msg = new Message(MsgType::Put, recv->key, contents, node_id);
             net->send_master(ret_msg);
             delete ret_msg;
         }

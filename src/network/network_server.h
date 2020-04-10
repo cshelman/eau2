@@ -64,16 +64,10 @@ public:
 
     // backticks are not a valid character to send
     char* encode(string s) {
-        // string* encoded_s = new string("```");
-        // encoded_s->append(s);
-        // encoded_s->append("```");
-        // return (char*)encoded_s->c_str();
-        
         stringstream ss;
         ss << setw(4) << setfill('0') << (s.size() + 1);
         string* result = new string(ss.str());
         result->append(s);
-        // printf("encoded string: %s\n", (char*)result->c_str());
 
         return (char*)result->c_str();
     }
@@ -118,9 +112,7 @@ public:
     void send_msg(int node, Message* msg) {
         Message* temp = msg->copy();
         string s = serialize_message(msg);
-        // printf("message: %s\n", (char*)s.c_str());
         char* encoded = encode(s);
-        // printf("net_server encoded message: %s\n", encoded);
         int bytes = send(atoi(client_sockets->at(node)), encoded, strlen(encoded) + 1, 0);
     }
 
