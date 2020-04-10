@@ -1,7 +1,8 @@
 #pragma once
 
 #include <vector>
-#include "../string.h"
+#include "../util/string.h"
+#include "../serializer/serial.h"
 #include "schema.h"
 #include "dataframe.h"
 
@@ -204,6 +205,10 @@ public:
   virtual Rower* clone() {
     return new Rower();
   }
+
+  virtual char* serialize() {}
+
+  virtual Rower* deserialize(char* s) {}
 };
 
 class EqualityRower : public Rower {
@@ -245,4 +250,22 @@ public:
   Rower* clone() {
     return new EqualityRower();
   }
+
+  // char* serialize() {
+  //   string* str = new string("{");
+  //   str->append(serialize_bool(is_equal));
+  //   str->append("}");
+  //   return (char*)str->c_str();
+  // }
+
+  // Rower* deserialize(char* r) {
+  //   Rower* ret = clone();
+  //   string* ds = new string(r);
+
+  //   if (!deserialize_bool((char*)ds->substr(1, 1).c_str())) {
+  //     ret->dead_toggle();
+  //   }
+
+  //   return ret;
+  // }
 };

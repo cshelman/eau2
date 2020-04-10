@@ -84,12 +84,10 @@ public:
         Message* msg = new Message(MsgType::Put, key, contents);
         string serialized_msg = serialize_message(msg);
         char* encoded_msg = encode(serialized_msg);
-        printf("client sending: %s\n", encoded_msg);
         send(server_sock, encoded_msg, strlen(encoded_msg) + 1, 0);
     }
 
     vector<string>* decode(char* s, int bytes_read) {
-        // printf("\ntrying to decode:\n%s\n", s);
         vector<string>* decoded_strings = new vector<string>();
         int start = 0;
         bool in_msg = false;
@@ -99,13 +97,10 @@ public:
             if (s[i] == '`') {
                 tic_counter ++;
                 if (in_msg && tic_counter == 3) {
-                    // printf("adding to vector\n");
                     char* decoded = new char[i - start - 2];
                     memcpy(decoded, s + start, i - start - 2);
-                    // printf("decoded: %s\n", decoded);
                     string* str = new string(decoded);
                     decoded_strings->push_back(*str);
-                    // printf("added: %s\n", (char*)str->c_str());
                     delete[] decoded;
                     tic_counter = 0;
                 }
@@ -136,7 +131,6 @@ public:
         memset(node_id, '\0', 8);
         read(server_sock, node_id, CLIENT_BUF_SIZE);
         node = new Node(atoi(node_id));
-        printf("made node #%s\n", node_id);
        
         string* put_msg = new string("");
         while (true) {
@@ -152,25 +146,17 @@ public:
                 bytes_read += recv(server_sock, buffer, bytes_to_read - bytes_read, 0);
             }
 
-            // printf("\n%s\n", buffer);
             Message* msg = deserialize_message(buffer);
             if (msg->type == MsgType::Act) {
-                node->apply(rower, msg->key);
-                // printf("Word count on %ld:\n", node->id);
-                WordCountRower* r = dynamic_cast<WordCountRower*>(rower);
-                r->print();
+                node->apply(rower, msg->key);           
+                send_message(msg->key, rower->serialize());
             }
             else if (msg->type == MsgType::Get) {
-                // printf("client recv GET msg\n");
                 char* df = node->get(msg->key);
-                // printf("sending\n");
                 send_message(msg->key, df);
-                // printf("DONNNE\n");
             }
             else if (msg->type == MsgType::Put) {
-                // printf("cmp: %s, \"END\"\n", msg->contents);
                 if (strcmp(msg->contents, "END") == 0) {
-                    printf("end of msg: %s\n", (char*)put_msg->c_str());
                     node->put(msg->key, (char*)put_msg->c_str());
                     *put_msg = "";
                 }
@@ -179,51 +165,11 @@ public:
                 }
             }
             else if (msg->type == MsgType::Kill) {
-                // delete decoded_strings;
                 delete[] buffer;
                 return;
             }
+
             delete msg;
-
-            // printf("client recv: %s\n", buffer);
-
-            // vector<string>* decoded_strings = decode(buffer, bytes_read);
-
-            // for (int i = 0; i < decoded_strings->size(); i++) {
-            //     // printf("\nclient working on: %s\n", (char*)decoded_strings->at(i).c_str());
-            //     Message* msg = deserialize_message((char*)decoded_strings->at(i).c_str());
-            //     if (msg->type == MsgType::Act) {
-            //         node->apply(rower, msg->key);
-            //         // printf("Word count on %ld:\n", node->id);
-            //         WordCountRower* r = dynamic_cast<WordCountRower*>(rower);
-            //         r->print();
-            //     }
-            //     else if (msg->type == MsgType::Get) {
-            //         // printf("client recv GET msg\n");
-            //         char* df = node->get(msg->key);
-            //         // printf("sending\n");
-            //         send_message(msg->key, df);
-            //         // printf("DONNNE\n");
-            //     }
-            //     else if (msg->type == MsgType::Put) {
-            //         if (strcmp(msg->contents, "END") == 0) {
-            //             // printf("end of msg, key: %s\n", (char*)msg->key->name.c_str());
-            //             node->put(msg->key, (char*)put_msg->c_str());
-            //             *put_msg = "";
-            //         }
-            //         else {
-            //             put_msg->append(msg->contents);
-            //         }
-            //     }
-            //     else if (msg->type == MsgType::Kill) {
-            //         delete decoded_strings;
-            //         delete[] buffer;
-            //         return;
-            //     }
-            //     delete msg;
-            // }
-            
-            // delete decoded_strings;
             delete[] buffer;
         }
     }

@@ -53,52 +53,52 @@ void fake_network_callback(size_t node_id) {
 }
 
 void test_fake_network(size_t nodes) {
-    size_t num_nodes = nodes;
-    net = new FakeNetwork(num_nodes);
-    Server* kv = new Server(net);
+    // size_t num_nodes = nodes;
+    // net = new FakeNetwork(num_nodes);
+    // Server* kv = new Server(net);
 
-    Schema* s = new Schema();
-    s->add_column('I');
-    s->add_column('F');
-    s->add_column('B');
-    s->add_column('S');
+    // Schema* s = new Schema();
+    // s->add_column('I');
+    // s->add_column('F');
+    // s->add_column('B');
+    // s->add_column('S');
 
-    DataFrame* df1 = new DataFrame(*s);
+    // DataFrame* df1 = new DataFrame(*s);
 
-    for (size_t i = 0; i < 10000; i++) {
-        Row* row = new Row(df1->get_schema());
-        row->set(0, (int)i);
-        row->set(1, (float)i);
-        row->set(2, (bool)(i % 2));
-        String* str = new String("IM STR");
-        row->set(3, str);
-        df1->add_row(*row);
-        delete str;
-        delete row;
-    }
+    // for (size_t i = 0; i < 10000; i++) {
+    //     Row* row = new Row(df1->get_schema());
+    //     row->set(0, (int)i);
+    //     row->set(1, (float)i);
+    //     row->set(2, (bool)(i % 2));
+    //     String* str = new String("IM STR");
+    //     row->set(3, str);
+    //     df1->add_row(*row);
+    //     delete str;
+    //     delete row;
+    // }
 
-    Key* k1 = new Key("one");
+    // Key* k1 = new Key("one");
 
-    thread* ts[num_nodes];
-    for (int i = 0; i < num_nodes; i++) {
-        ts[i] = new thread(fake_network_callback, i);
-    }
+    // thread* ts[num_nodes];
+    // for (int i = 0; i < num_nodes; i++) {
+    //     ts[i] = new thread(fake_network_callback, i);
+    // }
 
-    kv->put(k1, df1);
-    DataFrame* df2 = kv->get(k1);
+    // kv->put(k1, df1);
+    // DataFrame* df2 = kv->get(k1);
 
-    kv->shutdown();
+    // kv->shutdown();
 
-    for (int i = 0; i < num_nodes; i++) {
-        ts[i]->join();
-    }
+    // for (int i = 0; i < num_nodes; i++) {
+    //     ts[i]->join();
+    // }
     
-    assert(df1->equals(df2));
+    // assert(df1->equals(df2));
 
-    delete df1;
-    delete df2;
-    delete k1;
-    delete kv;
+    // delete df1;
+    // delete df2;
+    // delete k1;
+    // delete kv;
 
-    printf("fake network test: SUCCESS\n");
+    // printf("fake network test: SUCCESS\n");
 }

@@ -3,7 +3,7 @@
 #include "../src/rowers/word_count.h"
 #include "../src/dataframe/schema.h"
 #include "../src/dataframe/dataframe.h"
-#include "../src/string.h"
+#include "../src/util/string.h"
 #include "../src/serializer/serial.h"
 #include <fstream>
 #include <map>

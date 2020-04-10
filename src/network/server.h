@@ -7,6 +7,7 @@
 #include "network_server.h"
 #include "message.h"
 #include "../serializer/serial.h"
+#include "../rowers/word_count.h"
 #include <string>
 #include <mutex>
 #include <vector>
@@ -33,35 +34,44 @@ public:
         net->shutdown();
     }
 
-    void run_rower(Key* key) {
+    Rower* run_rower(Key* key, Rower* rower) {
         Message* msg = new Message(MsgType::Act, key, (char*)"ACT");
         for (size_t i = 0; i < net->num_nodes; i++) {
             net->send_msg(i, msg);
         }
 
-        while (true) {
-            Message* ret_msg = net->recv_master();
-            if (ret_msg == nullptr) {
-                delete ret_msg;
-                continue;
-            }
-            else {
-                // TODO : add sendback of rower from client to here
+        vector<Rower*>* rowers = new vector<Rower*>();
 
-                delete ret_msg;
-                break;
+        for (size_t i = 0; i < net->num_nodes; i++) {
+            while (true) {
+                Message* ret_msg = net->recv_master();
+                if (ret_msg == nullptr) {
+                    delete ret_msg;
+                    continue;
+                }
+                else {
+                    Rower* r = rower->deserialize(ret_msg->contents);
+                    rowers->push_back(r);
+                    delete ret_msg;
+                    break;
+                }
             }
         }
+
+        for (int i = 0; i < rowers->size(); i++) {
+            WordCountRower* wr = dynamic_cast<WordCountRower*>(rower);
+            rower->join_delete(rowers->at(i));
+        }
+        
+        return rower;
     }
 
     DataFrame* get(Key* key) {
-        // printf("\n\n\nSTARTING GET in server\n\n\n");
         Message* msg = new Message(MsgType::Get, key, (char*)"GET");
 
         vector<Column*>* df_cols = new vector<Column*>();
         for (size_t i = 0; i < net->num_nodes; i++) {
             mtx.lock();
-            // printf("\nsending get for %s\n", (char*)key->name.c_str());
             net->send_msg(i, msg);
             mtx.unlock();
             while (true) {
@@ -87,7 +97,6 @@ public:
         for (int i = 0; i < df_cols->size(); i++) {
             df->add_column(df_cols->at(i));
         }
-        // printf("\n\nDONE WITH GET in server\n\n\n");
         return df;
     }
 
@@ -95,8 +104,6 @@ public:
         vector<Column*>* col_arr = new vector<Column*>(*df->col_arr);
         int min_cols_per_node = col_arr->size() / net->num_nodes;
         int rem = col_arr->size() % net->num_nodes;
-        printf("min cols: %d\n", min_cols_per_node);
-
         for (int i = 0; i < net->num_nodes; i++) {
             // calculate number of columns to send to this node
             int cur_size = min_cols_per_node;
@@ -122,9 +129,7 @@ public:
             // send serialized package
             vector<Message*>* messages = parse_msg(MsgType::Put, key, (char*)val.c_str());
             for (int j = 0; j < messages->size(); j++) {
-                // printf("sending PUT msg to: %d\n", i);
                 net->send_msg(i, messages->at(j));
-                // printf("\nsending put: %s\n", messages->at(j)->contents);
             }
             
             delete messages;

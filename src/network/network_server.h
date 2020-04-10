@@ -130,11 +130,9 @@ public:
 
             recv(atoi(client_sock), size, 4, 0);
             int bytes_read = 0;
-            // printf("size: %s\n", size);
             int bytes_to_read = atoi(size);
 
             if (bytes_to_read > 0) {
-                // printf("bytes to read: %d\n", bytes_read);
                 char* buffer = new char[bytes_to_read];
                 memset(buffer, '\0', bytes_to_read);
 
@@ -142,9 +140,7 @@ public:
                     bytes_read += recv(atoi(client_sock), buffer, bytes_to_read - bytes_read, 0);
                 }
                 
-                // printf("deserializing: %s\n", buffer);
                 Message* msg = deserialize_message((char*)buffer);
-                // printf("\nlistening recv & pushed: %s\n", msg->contents);
                 master_queue->push(msg);
             }
             else {
@@ -158,7 +154,6 @@ public:
     }
 
     void registration() {
-        printf("server starting registration for %d nodes\n", num_nodes);
         while (client_ips->size() < num_nodes) {
             string* buffer = new string();
             int client_sock;
@@ -168,7 +163,6 @@ public:
             int status;
             assert((status = recv(client_sock, temp_buffer, NET_BUF_SIZE, 0)) >= 0);
             buffer->append(temp_buffer);
-            // printf("client %s connected\n", buffer->c_str());
 
             client_ips->push_back((char*)buffer->c_str());
 
@@ -180,9 +174,7 @@ public:
             char* assigned_node_num = (char*)to_string(index).c_str();
             send(atoi(client_sockets->at(index)), assigned_node_num, strlen(assigned_node_num) + 1, 0);
             ts[index] = new thread(&NetworkServer::listening, this, sock);
-            printf("finished registering node: %s (%s)\n", assigned_node_num, sock);
         }
-        printf("client socks: %s, %s\n", client_sockets->at(0), client_sockets->at(1));
     }
 
     void shutdown() {

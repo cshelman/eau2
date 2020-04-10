@@ -5,6 +5,7 @@
 #include <string>
 
 #include "../network/message.h"
+#include "../dataframe/column.h"
 
 using namespace std;
 

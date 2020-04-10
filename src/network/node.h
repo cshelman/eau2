@@ -30,7 +30,6 @@ public:
         if (pairs->count(key->name) > 0) {
             DataFrame* df = pairs->at(key->name);
             df->pmap(*rower);
-            printf("node %ld applied rower\n", id);
             return rower;
         }
         else {
@@ -78,9 +77,7 @@ public:
                 df->add_column(col_arr->at(i));
             }
             
-            // printf("put key: %s\n", (char*)key->name.c_str());
             pairs->insert({key->name, df});
-            // printf("done with put in node\n");
         }
     }
 };
