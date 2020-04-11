@@ -168,7 +168,7 @@ void test_projects_rower() {
     FindProjectsRower* fpr = new FindProjectsRower(bs, 9, 6);
     fpr->project_ids = ps;
     char* sr = fpr->serialize();
-    // string* spr = new string(sr);
+    // string* spr = new string(sr, 21);
     // char* cs = (char*)spr->c_str();
     // for(int i = 0; i < 24; i++) {
     //     char c = cs[i];
@@ -190,6 +190,7 @@ void test_projects_rower() {
         assert(fpr->user_ids[i] == nfpr->user_ids[i]);
     }
     for (int i = 0; i < nfpr->p_size; i++) {
+        printf("%d | %d\n", fpr->project_ids[i], nfpr->project_ids[i]);
         assert(fpr->project_ids[i] == nfpr->project_ids[i]);
     }
 
@@ -224,16 +225,17 @@ void test_users_rower() {
     FindUsersRower* fur = new FindUsersRower(bs, 9, 6);
     fur->user_ids = us;
     char* sr = fur->serialize();
-    string* ssr = new string(sr);
+    string* ssr = new string(sr, 21);
 
     printf("%s\n", sr);
     printf("%s\n", (char*)ssr->c_str());
-    // assert(memcmp(sr, (char*)ssr->c_str(), 21) == 0);
+    printf("size: %ld\n", strlen(sr));
+    assert(memcmp(sr, (char*)ssr->c_str(), 21) == 0);
 
     // char* sr2 = (char*)ssr->c_str();
 
-    // FindUsersRower* nfur = new FindUsersRower((char*)ssr->c_str());
-    FindUsersRower* nfur = new FindUsersRower(sr);
+    FindUsersRower* nfur = new FindUsersRower(ssr->c_str());
+    // FindUsersRower* nfur = new FindUsersRower(sr);
     assert(fur->size == nfur->size);
     assert(fur->u_size == nfur->u_size);
     for (int i = 0; i < nfur->size; i++) {

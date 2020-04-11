@@ -264,13 +264,13 @@
 //   void merge(Set& set, char const* name, int stage) {
 //     if (this_node() == 0) {
 //       for (size_t i = 1; i < arg.num_nodes; ++i) {
-// 	Key nK(StrBuff(name).c(stage).c("-").c(i).get());
-// 	DataFrame* delta = dynamic_cast<DataFrame*>(kv.waitAndGet(nK));
-// 	p("    received delta of ").p(delta->nrows())
-// 	  .p(" elements from node ").pln(i);
-// 	SetUpdater upd(set);
-// 	delta->map(upd);
-// 	delete delta;
+//          Key nK(StrBuff(name).c(stage).c("-").c(i).get());
+//          DataFrame* delta = dynamic_cast<DataFrame*>(kv.waitAndGet(nK));
+//          p("    received delta of ").p(delta->nrows())
+//            .p(" elements from node ").pln(i);
+//          SetUpdater upd(set);
+//          delta->map(upd);
+//          delete delta;
 //       }
 //       p("    storing ").p(set.size()).pln(" merged elements");
 //       SetWriter writer(set);

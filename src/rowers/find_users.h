@@ -91,9 +91,10 @@ public:
   }
 
   char* serialize() {
-    char* bitmap = new char[((size + u_size) / 8) + 20];
+    char* bitmap = new char[((size + u_size) / 8) + 25];
     memset(bitmap, '\0', ((size + u_size) / 8) + 20);
     bitmap[0] = '0';
+    bitmap[((size + u_size) / 8) + 24] = 'x';
 
     stringstream ss;
     ss << setw(9) << setfill('0') << to_string(size);
