@@ -186,7 +186,6 @@ public:
       call. The return value is used in filters to indicate that a row
       should be kept. */
   virtual bool accept(Row& r) {
-    printf("*default rower*\n");
     Fielder* fielder = new Fielder();
     r.visit(r.get_idx(), *fielder);
     delete fielder;

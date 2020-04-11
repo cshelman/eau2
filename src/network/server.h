@@ -165,6 +165,18 @@ public:
         delete col_arr;
     }
 
+    void set_rower(Rower* r) {
+        Key* key = new Key("SET_ROWER");
+        vector<Message*>* messages = parse_msg(MsgType::SetRower, key, r->serialize(), -1);
+        for (int i = 0; i < net->num_nodes; i++) {
+            // send serialized package
+            for (int j = 0; j < messages->size(); j++) {
+                net->send_msg(i, messages->at(j));
+            }
+        }
+        delete messages;
+    }
+
     vector<Message*>* parse_msg(MsgType type, Key* key, char* s, size_t sender) {
         vector<Message*>* messages = new vector<Message*>();
         string* str = new string(s);

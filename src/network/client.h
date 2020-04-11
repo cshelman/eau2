@@ -128,6 +128,16 @@ public:
         return (char*)result->c_str();
     }
 
+    void set_up_rower(char* r) {
+        printf("rower serialized: %s\n", r);
+        if (r[0] == '0') {
+            rower = new FindProjectsRower(r);
+        } 
+        else if (r[0] == '1') {
+            rower = new FindUsersRower(r);
+        }
+    }
+
     void be_client() {
         char* node_id = new char[8];
         memset(node_id, '\0', 8);
@@ -135,6 +145,7 @@ public:
         node = new Node(atoi(node_id));
        
         string* put_msg = new string("");
+        string* rower_msg = new string("");
         while (true) {
             char* size = new char[4];
 
@@ -149,7 +160,16 @@ public:
             }
 
             Message* msg = deserialize_message(buffer);
-            if (msg->type == MsgType::Act) {
+            if (msg->type == MsgType::SetRower) {
+                if (strcmp(msg->contents, "END") == 0) {
+                    set_up_rower((char*)rower_msg->c_str());
+                    *rower_msg = "";
+                }
+                else {
+                    rower_msg->append(msg->contents);
+                }
+            }
+            else if (msg->type == MsgType::Act) {
                 node->apply(rower, msg->key);           
                 send_message(msg->key, rower->serialize());
             }

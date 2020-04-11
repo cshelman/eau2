@@ -5,7 +5,10 @@
 #include "../src/dataframe/dataframe.h"
 #include "../src/network/key.h"
 #include "../src/network/message.h"
+#include "../src/rowers/find_projects.h"
+#include "../src/rowers/find_users.h"
 #include <string.h>
+#include <bitset>
 
 #define VEC_SIZE 10000
 
@@ -142,6 +145,111 @@ void test_message() {
     delete m2;
 }
 
+void test_projects_rower() {
+    bool bs[9];
+    bs[0] = true;
+    bs[1] = true;
+    bs[2] = true;
+    bs[3] = true;
+    bs[4] = false;
+    bs[5] = false;
+    bs[6] = false;
+    bs[7] = true;
+    bs[8] = true;
+
+    bool ps[6];
+    ps[0] = true;
+    ps[1] = false;
+    ps[2] = true;
+    ps[3] = false;
+    ps[4] = true;
+    ps[5] = true;
+
+    FindProjectsRower* fpr = new FindProjectsRower(bs, 9, 6);
+    fpr->project_ids = ps;
+    char* sr = fpr->serialize();
+    // string* spr = new string(sr);
+    // char* cs = (char*)spr->c_str();
+    // for(int i = 0; i < 24; i++) {
+    //     char c = cs[i];
+    //     printf("char: %c\n", c);
+    //     bitset<8> b1(c);
+    //     cout << b1 << endl;
+    //     char cc = sr[i];
+    //     printf("char2: %c\n", cc);
+    //     bitset<8> b2(cc);
+    //     cout << b2 << endl;
+    // }
+    
+
+    // FindProjectsRower* nfpr = new FindProjectsRower((char*)spr->c_str());
+    FindProjectsRower* nfpr = new FindProjectsRower(sr);
+    assert(fpr->size == nfpr->size);
+    assert(fpr->p_size == nfpr->p_size);
+    for (int i = 0; i < nfpr->size; i++) {
+        assert(fpr->user_ids[i] == nfpr->user_ids[i]);
+    }
+    for (int i = 0; i < nfpr->p_size; i++) {
+        assert(fpr->project_ids[i] == nfpr->project_ids[i]);
+    }
+
+    printf("PASSED\n");
+
+    delete sr;
+    // delete spr;
+    delete fpr;
+    delete nfpr;
+}
+
+void test_users_rower() {
+    bool bs[9];
+    bs[0] = true;
+    bs[1] = true;
+    bs[2] = true;
+    bs[3] = true;
+    bs[4] = false;
+    bs[5] = false;
+    bs[6] = false;
+    bs[7] = true;
+    bs[8] = true;
+
+    bool us[6];
+    us[0] = true;
+    us[1] = false;
+    us[2] = true;
+    us[3] = false;
+    us[4] = true;
+    us[5] = true;
+
+    FindUsersRower* fur = new FindUsersRower(bs, 9, 6);
+    fur->user_ids = us;
+    char* sr = fur->serialize();
+    string* ssr = new string(sr);
+
+    printf("%s\n", sr);
+    printf("%s\n", (char*)ssr->c_str());
+    // assert(memcmp(sr, (char*)ssr->c_str(), 21) == 0);
+
+    // char* sr2 = (char*)ssr->c_str();
+
+    // FindUsersRower* nfur = new FindUsersRower((char*)ssr->c_str());
+    FindUsersRower* nfur = new FindUsersRower(sr);
+    assert(fur->size == nfur->size);
+    assert(fur->u_size == nfur->u_size);
+    for (int i = 0; i < nfur->size; i++) {
+        assert(fur->project_ids[i] == nfur->project_ids[i]);
+    }
+    for (int i = 0; i < nfur->u_size; i++) {
+        printf("%d | %d\n", fur->user_ids[i], nfur->user_ids[i]);
+        assert(fur->user_ids[i] == nfur->user_ids[i]);
+    }
+
+    delete sr;
+    // delete ssr;
+    delete fur;
+    delete nfur;
+}
+
 void test_serialize() {
     // test primitives
     test_string();
@@ -159,6 +267,10 @@ void test_serialize() {
 
     // test messages
     test_message();
+
+    // test rowers
+    test_projects_rower();
+    test_users_rower();
 
     printf("serialize test: SUCCESS\n");
 }

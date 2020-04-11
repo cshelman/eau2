@@ -9,7 +9,7 @@
 using namespace std;
 
 enum class MsgType {
-    Act, Get, Put, Kill
+    Act, Get, Put, Kill, SetRower
 };
 
 class Message {

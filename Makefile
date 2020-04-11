@@ -52,7 +52,7 @@ run_client_3: build_client
 build_linus:
 	g++ -g -std=c++11 tests/linus.cpp -o linus.out -lpthread
 
-linus:
+linus: build_linus
 	./linus.out
 
 clean:
