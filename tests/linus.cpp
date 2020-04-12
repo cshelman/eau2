@@ -20,8 +20,11 @@ int main(int argc, char** argv) {
     // cin >> temp;
     // printf("\n");
     
+    printf("starting put to server");
     Key* commits_key = new Key("commits");
     serv->put(commits_key, commits_df);
+    //serv->put(commits_key, commits_df);
+    //serv->put(commits_key, commits_df);
 
     // printf("PRESS X TO COUNT...");
     // cin >> temp;
