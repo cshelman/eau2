@@ -2,6 +2,8 @@
 
 #include "node.h"
 #include "../rowers/word_count.h"
+#include "../rowers/find_projects.h"
+#include "../rowers/find_users.h"
 
 #include <string.h>
 #include <stdio.h>
@@ -129,7 +131,7 @@ public:
     }
 
     void set_up_rower(char* r) {
-        printf("rower serialized: %s\n", r);
+        // printf("rower serialized: %s\n", r);
         if (r[0] == '0') {
             rower = new FindProjectsRower(r);
         } 
@@ -159,6 +161,8 @@ public:
                 bytes_read += recv(server_sock, buffer, bytes_to_read - bytes_read, 0);
             }
 
+            // printf("buffer: %s\n", buffer);
+
             Message* msg = deserialize_message(buffer);
             if (msg->type == MsgType::SetRower) {
                 if (strcmp(msg->contents, "END") == 0) {
@@ -170,8 +174,12 @@ public:
                 }
             }
             else if (msg->type == MsgType::Act) {
+                // printf("Trying to apply rower...\n");
                 node->apply(rower, msg->key);           
-                send_message(msg->key, rower->serialize());
+                // printf("SUCCESS\n");
+                // printf("Trying to send back rower...\n");
+                send_message(msg->key, (char*)rower->serialize()->c_str());
+                // printf("SUCCESS\n");
             }
             else if (msg->type == MsgType::Get) {
                 char* df = node->get(msg->key);

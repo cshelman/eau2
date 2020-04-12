@@ -140,7 +140,7 @@ public:
 
 
     /** Set the fields of the given row object with values from the columns at
-      * the given offset.  If the row is not form the same schema as the
+      * the given offset. If the row is not from the same schema as the
       * dataframe, results are undefined.
       */
     void fill_row(size_t idx, Row& row) {
@@ -149,7 +149,6 @@ public:
         switch (t) {
           case 'S': {
             StringColumn* string_col = col_arr->at(i)->as_string();
-
             row.set(i, string_col->get(idx));
             break;
           }

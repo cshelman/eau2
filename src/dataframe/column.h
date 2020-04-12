@@ -24,19 +24,23 @@ public:
     /** Type converters: Return same column under its actual type, or
      *  nullptr if of the wrong type.  */
     virtual IntColumn* as_int() {
-        return nullptr;
+        printf("invalid as_int\n");
+        exit(1);
     }
 
     virtual BoolColumn* as_bool() {
-        return nullptr;
+        printf("invalid as_bool\n");
+        exit(1);
     }
 
     virtual FloatColumn* as_float() {
-        return nullptr;
+        printf("invalid as_float\n");
+        exit(1);
     }
 
     virtual StringColumn* as_string() {
-        return nullptr;
+        printf("invalid as_string\n");
+        exit(1);
     }
 
     /** Type appropriate push_back methods. Calling the wrong method is
@@ -58,6 +62,16 @@ public:
 
     virtual void push_back(String* val) {
         printf("invalid val push back\n");
+        exit(1);
+    }
+
+    virtual void append(Column* val) {
+        printf("invalid col append\n");
+        exit(1);
+    }
+
+    virtual Column* get_subset(int start, int end) {
+        printf("invalid get subset\n");
         exit(1);
     }
 
@@ -113,12 +127,34 @@ public:
         return arr->at(idx);
     }
 
+    Column* get_subset(int start, int end) {
+        vector<int>::const_iterator first = arr->begin() + start;
+        vector<int>::const_iterator last = arr->begin() + end;
+
+        IntColumn* ic = new IntColumn();
+        ic->arr = new vector<int>(first, last);
+        return ic;
+    }
+
     IntColumn* as_int() {
         return this;
     }
 
     void push_back(int val) {
         arr->push_back(val);
+    }
+
+    void append(Column* c) {
+        IntColumn* ic = c->as_int();
+        // printf("APPENDING: \n");
+        // for(int i = 0; i < ic->arr->size(); i++) {
+        //     printf("arr[%d] = %d\n", i, ic->arr->at(i));
+        // }
+        arr->insert(arr->end(), ic->arr->begin(), ic->arr->end());
+        // printf("AFTER APPENDING: \n");
+        // for(int i = 0; i < arr->size(); i++) {
+        //     printf("arr[%d] = %d\n", i, arr->at(i));
+        // }
     }
 
     /** Set value at idx. An out of bound idx is undefined.  */
@@ -177,12 +213,26 @@ public:
         return arr->at(idx);
     }
 
+    Column* get_subset(int start, int end) {
+        vector<float>::const_iterator first = arr->begin() + start;
+        vector<float>::const_iterator last = arr->begin() + end;
+
+        FloatColumn* fc = new FloatColumn();
+        fc->arr = new vector<float>(first, last);
+        return fc;
+    }
+
     FloatColumn* as_float() {
         return this;
     }
 
     void push_back(float val) {
         arr->push_back(val);
+    }
+
+    void append(Column* c) {
+        FloatColumn* fc = c->as_float();
+        arr->insert(arr->end(), fc->arr->begin(), fc->arr->end());
     }
 
     /** Set value at idx. An out of bound idx is undefined.  */
@@ -241,8 +291,22 @@ public:
         arr->push_back(val);
     }
 
+    void append(Column* c) {
+        BoolColumn* bc = c->as_bool();
+        arr->insert(arr->end(), bc->arr->begin(), bc->arr->end());
+    }
+
     bool get(size_t idx) {
         return arr->at(idx);
+    }
+
+    Column* get_subset(int start, int end) {
+        vector<bool>::const_iterator first = arr->begin() + start;
+        vector<bool>::const_iterator last = arr->begin() + end;
+
+        BoolColumn* bc = new BoolColumn();
+        bc->arr = new vector<bool>(first, last);
+        return bc;
     }
 
     BoolColumn* as_bool() {
@@ -316,9 +380,23 @@ public:
         }
     }
 
+    void append(Column* c) {
+        StringColumn* sc = c->as_string();
+        arr->insert(arr->end(), sc->arr->begin(), sc->arr->end());
+    }
+
     /** Returns the string at idx; undefined on invalid idx.*/
     String* get(size_t idx) {
         return arr->at(idx);
+    }
+    
+    Column* get_subset(int start, int end) {
+        vector<String*>::const_iterator first = arr->begin() + start;
+        vector<String*>::const_iterator last = arr->begin() + end;
+
+        StringColumn* sc = new StringColumn();
+        sc->arr = new vector<String*>(first, last);
+        return sc;
     }
 
     /** Acquire ownership fo the string.  Out of bound idx is undefined. */

@@ -33,7 +33,10 @@ public:
     project_ids = new bool[p_size];
     for (int i = end_pos + 1; i < sr->size(); i++) {
       project_ids[i - end_pos - 1] = atoi(sr->substr(i, 1).c_str());
+      // printf("pids[%d] = %d\n", i - end_pos - 1, project_ids[i - end_pos - 1]);
     }
+
+  
 
     delete sr;
   }
@@ -51,7 +54,16 @@ public:
     cols: PID(int) UID[writer](int) UID[committer](int)
   */
   bool accept(Row& r) {
+    // printf("p_size: %ld\n", p_size);
+    // printf("u size: %ld\n", size);
+    // printf("row size: %ld\n", r.width());
+    // printf("project id: %d\n", r.get_int(0));
+    // printf("user 1: %d\n", r.get_int(1));
+    // printf("user 2: %d\n", r.get_int(2));
+
+    // printf("user %d : %d || user %d : %d\n", r.get_int(1), user_ids[r.get_int(1)], r.get_int(2), user_ids[r.get_int(2)]);
     if (user_ids[r.get_int(1)] || user_ids[r.get_int(2)]) {
+        // printf("setting pid %d true\n", r.get_int(0));
         project_ids[r.get_int(0)] = true;
     }
 
@@ -85,6 +97,8 @@ public:
     for (int i = 0; i < p_size; i++) {
         ss->append(to_string(project_ids[i]));
     }
+
+    // printf("serialized rower: %s\n", ss->c_str());
 
     return ss;
   }

@@ -52,8 +52,8 @@ run_client_3: build_client
 build_linus:
 	g++ -g -std=c++11 tests/linus.cpp -o linus.out -lpthread
 
-linus: build_linus
-	./linus.out
+run_linus: build_linus
+	./linus.out 127.0.0.1:8080 3
 
 clean:
 	rm *.out

@@ -304,8 +304,6 @@ DataFrame* parseSor(char* filePath, size_t from, size_t len)
     // store the content of the file
     vector<vector<string>> matrix;
 
-    int count = 0;
-
     Schema* sc = new Schema();
 
     for (int i = 0; i < types.size(); i++) {
@@ -339,10 +337,6 @@ DataFrame* parseSor(char* filePath, size_t from, size_t len)
             break;
         }
 
-        if (count % 1000000 == 0) {
-            printf("%d\n", count);
-        }
-
         vector<string> row = parse_line(line, &types, columns);
 
         Row* r = new Row(*sc);
@@ -372,8 +366,6 @@ DataFrame* parseSor(char* filePath, size_t from, size_t len)
 
         df->add_row(*r);
         delete r;
-
-        count++;
     }
 
     // close file

@@ -74,7 +74,7 @@ public:
 
   string* serialize() {
     // set 1st byte for the type
-    string* ss = new string("0");
+    string* ss = new string("1");
     ss->append(":");
 
     for (int i = 0; i < size; i++) {

@@ -305,6 +305,11 @@ string serialize_message(Message* msg) {
 }
 
 Message* deserialize_message(char* s) {
+    if (strlen(s) == 0) {
+        printf("Tried to deserialize empty message\n");
+        exit(1);
+    }
+
     string* str = new string(s);
     size_t sender;
     MsgType type;

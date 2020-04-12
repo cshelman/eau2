@@ -8,6 +8,7 @@
 #include "message.h"
 #include "../serializer/serial.h"
 #include "../rowers/word_count.h"
+#include "../rowers/find_projects.h"
 #include <string>
 #include <mutex>
 #include <vector>
@@ -34,7 +35,7 @@ public:
         net->shutdown();
     }
 
-    Rower* run_rower(Key* key, Rower* rower) {
+    void run_rower(Key* key, Rower* rower) {
         Message* msg = new Message(MsgType::Act, key, (char*)"ACT", -1);
         for (size_t i = 0; i < net->num_nodes; i++) {
             net->send_msg(i, msg);
@@ -51,10 +52,11 @@ public:
             }
             else if (strcmp(ret_msg->contents, "END") == 0) {
                 Rower* r = rower->deserialize((char*)response_map->at(ret_msg->sender).c_str());
+
                 rowers->push_back(r);
                 delete ret_msg;
                 end_count++;
-                if (end_count >= 3) {
+                if (end_count >= net->num_nodes) {
                     break;
                 }
             }
@@ -77,8 +79,6 @@ public:
             WordCountRower* wr = dynamic_cast<WordCountRower*>(rower);
             rower->join_delete(rowers->at(i));
         }
-        
-        return rower;
     }
 
     DataFrame* get(Key* key) {
@@ -98,9 +98,20 @@ public:
                 }
                 else if (strcmp(ret_msg->contents, "END") == 0) {
                     vector<Column*>* node_cols = deserialize_col_vector((char*)response_map->at(ret_msg->sender).c_str());
-                    for (int j = 0; j < node_cols->size(); j++) {
-                        df_cols->push_back(node_cols->at(j));
+
+                    // if these are the first columns that come back
+                    if (df_cols->size() == 0) {
+                        for (int j = 0; j < node_cols->size(); j++) {
+                            df_cols->push_back(node_cols->at(j));
+                        }
                     }
+                    // for all nodes but the first ones
+                    else {
+                        for (int j = 0; j < node_cols->size(); j++) {
+                            df_cols->at(j)->append(node_cols->at(j));
+                        }
+                    }
+                    
                     delete ret_msg;
                     break;
                 }
@@ -130,29 +141,30 @@ public:
 
     void put(Key* key, DataFrame* df) {
         vector<Column*>* col_arr = new vector<Column*>(*df->col_arr);
-        int min_cols_per_node = col_arr->size() / net->num_nodes;
-        int rem = col_arr->size() % net->num_nodes;
+        int entries_per_node = df->nrows() / net->num_nodes;
+        int rem = df->nrows() % net->num_nodes;
+        
+        // to each client in the network:
         for (int i = 0; i < net->num_nodes; i++) {
-            // calculate number of columns to send to this node
-            int cur_size = min_cols_per_node;
-            if (rem > 0) {
-                cur_size++;
-                rem--;
+            vector<Column*>* sub_cols = new vector<Column*>();
+
+            // get the subsection of the columns to send
+            int offset = i * entries_per_node;
+            if (i == net->num_nodes - 1) {
+                // this changes the meaning of this variable
+                entries_per_node += rem;
+            }
+            for (int j = 0; j < col_arr->size(); j++) {
+                //gets rows from (i * entries_per_node) to (i * entries_per_node) + entries_per_node
+                sub_cols->push_back(col_arr->at(j)->get_subset(offset, offset +  entries_per_node));
             }
 
-            // add the columns to the column vector to send
-            vector<Column*>* cols_to_send = new vector<Column*>();
-            for (int j = 0; j < cur_size; j++) {
-                cols_to_send->push_back(col_arr->front());
-                col_arr->erase(col_arr->begin());
-            }
-
-            // serialize columns
+            // serialize sub columns
             string val = "";
-            if (cols_to_send->size() > 0) {
-                val = serialize_col_vector(cols_to_send);
+            if (sub_cols->size() > 0) {
+                val = serialize_col_vector(sub_cols);
             }
-            delete cols_to_send;
+            delete sub_cols;
 
             // send serialized package
             vector<Message*>* messages = parse_msg(MsgType::Put, key, (char*)val.c_str(), -1);
@@ -162,12 +174,44 @@ public:
             
             delete messages;
         }
+        
         delete col_arr;
+        // for (int i = 0; i < net->num_nodes; i++) {
+        //     // calculate number of columns to send to this node
+        //     int cur_size = min_cols_per_node;
+        //     if (rem > 0) {
+        //         cur_size++;
+        //         rem--;
+        //     }
+
+        //     // add the columns to the column vector to send
+        //     vector<Column*>* cols_to_send = new vector<Column*>();
+        //     for (int j = 0; j < cur_size; j++) {
+        //         cols_to_send->push_back(col_arr->front());
+        //         col_arr->erase(col_arr->begin());
+        //     }
+
+        //     // serialize columns
+        //     string val = "";
+        //     if (cols_to_send->size() > 0) {
+        //         val = serialize_col_vector(cols_to_send);
+        //     }
+        //     delete cols_to_send;
+
+        //     // send serialized package
+        //     vector<Message*>* messages = parse_msg(MsgType::Put, key, (char*)val.c_str(), -1);
+        //     for (int j = 0; j < messages->size(); j++) {
+        //         net->send_msg(i, messages->at(j));
+        //     }
+            
+        //     delete messages;
+        // }
+        // delete col_arr;
     }
 
     void set_rower(Rower* r) {
         Key* key = new Key("SET_ROWER");
-        vector<Message*>* messages = parse_msg(MsgType::SetRower, key, r->serialize(), -1);
+        vector<Message*>* messages = parse_msg(MsgType::SetRower, key, (char*)r->serialize()->c_str(), -1);
         for (int i = 0; i < net->num_nodes; i++) {
             // send serialized package
             for (int j = 0; j < messages->size(); j++) {
