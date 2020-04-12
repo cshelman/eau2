@@ -18,41 +18,24 @@ public:
   size_t p_size;
 
   FindProjectsRower(char* r) {
-    if (strlen(r) <= 2) {
-        printf("Invalid rower instantiation\n");
-        exit(1);
-    }
-
-    // printf("parsing: %s\n", r);
-
-    char char_len[10];
-    char_len[9] = '\0';
-    size_t len = 0;
-    memcpy(char_len, &r[1], 9);
-    // printf("about to sscanf(%s)\n", char_len);
-    if (1 != sscanf(char_len, "%zu", &len)) printf("bad sscanf 1\n");
-
-    char char_plen[10];
-    char_plen[9] = '\0';
-    size_t plen = 0;
-    memcpy(char_plen, &r[10], 9);
-    // printf("about to sscanf(%s)\n", char_plen);
-    if (1 != sscanf(char_plen, "%zu", &plen)) printf("bad sscanf 2\n");
     
-    bool* uids = new bool[len];
-    for (int i = 0; i < len; i++) {
-      uids[i] = (r[(i/8) + 19] >> i % 8) & 1;
+    string* sr = new string(r);
+    int start_pos = sr->find(":") + 1;
+    int end_pos = sr->find(":", start_pos);
+
+    size = end_pos - start_pos;
+    user_ids = new bool[size];
+    for (int i = start_pos; i < end_pos; i++) {
+      user_ids[i - start_pos] = atoi(sr->substr(i, 1).c_str());
     }
 
-    bool* pids = new bool[plen];
-    for (int i = 0; i < plen; i++) {
-        pids[i] = (r[(i/8) + 19 + len] >> i % 8) & 1;
+    p_size = sr->size() - end_pos - 1;
+    project_ids = new bool[p_size];
+    for (int i = end_pos + 1; i < sr->size(); i++) {
+      project_ids[i - end_pos - 1] = atoi(sr->substr(i, 1).c_str());
     }
 
-    user_ids = uids;
-    project_ids = pids;
-    size = len;
-    p_size = plen;
+    delete sr;
   }
 
   FindProjectsRower(bool* uids, size_t s, size_t ps) {
@@ -88,29 +71,22 @@ public:
     return new FindProjectsRower(user_ids, size, p_size);
   }
 
-  char* serialize() {
-    char* bitmap = new char[((size + p_size) / 8) + 20];
-    memset(bitmap, '\0', ((size + p_size) / 8) + 20);
-    bitmap[0] = '0';
+  string* serialize() {
 
-    stringstream ss;
-    ss << setw(9) << setfill('0') << to_string(size);
-    ss << setw(9) << setfill('0') << to_string(p_size);
-    string s(ss.str());
+    string* ss = new string("0");
+    ss->append(":");
 
-    char* len_as_c = (char*)s.c_str();
-
-    memcpy(&bitmap[1], len_as_c, 18);
-    
     for (int i = 0; i < size; i++) {
-        bitmap[(i/8) + 19] |= (user_ids[i] << i % 8);
+        ss->append(to_string(user_ids[i]));
     }
+    
+    ss->append(":");
 
     for (int i = 0; i < p_size; i++) {
-        bitmap[(i/8) + 19 + size] |= (project_ids[i] << i % 8);
+        ss->append(to_string(project_ids[i]));
     }
-    
-    return bitmap;
+
+    return ss;
   }
 
   Rower* deserialize(char* r) {

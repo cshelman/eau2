@@ -204,7 +204,7 @@ public:
     return new Rower();
   }
 
-  virtual char* serialize() {}
+  virtual string* serialize() {}
 
   virtual Rower* deserialize(char* s) {}
 };

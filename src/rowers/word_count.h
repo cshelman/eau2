@@ -62,7 +62,7 @@ public:
     }
   }
 
-  char* serialize() {
+  string serialize() {
     vector<String*>* vs = new vector<String*>();
     vector<int>* vi = new vector<int>();
     for (auto const &count : *word_counts) {
@@ -74,7 +74,7 @@ public:
     string* serialized = new string(serialize_str_vector(vs));
     serialized->append("`:`");
     serialized->append(serialize_int_vector(vi));
-    return (char*)serialized->c_str();
+    return *serialized;
   }
 
   Rower* deserialize(char* r) {
