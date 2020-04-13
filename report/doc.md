@@ -44,7 +44,8 @@ See linus.cpp and test_client.cpp for how to set up and run the degrees of linus
 
 Currently the makefile specifies that the linus program will run with 3 clients, but this can be changed either in the makefile or by running from the command line.
 
-Set the configuration for the degrees of linus program at the top of linus.cpp
+Set the configuration for the degrees of linus program at the top of linus.cpp.
+The 3 PATHS must be set!
 
 To run (in separate terminal clients):
 - make run_linus
