@@ -42,15 +42,21 @@ make valgrind_[...] - builds then runs valgrind (with --leak-check=full) on a sp
 
 See linus.cpp and test_client.cpp for how to set up and run the degrees of linus program.
 
-Currently the makefile specifies that the linus program will run with 3 clients, but this can be changed either in the makefile or by running from the command line?
+Currently the makefile specifies that the linus program will run with 3 clients, but this can be changed either in the makefile or by running from the command line.
+
+Set the configuration for the degrees of linus program at the top of linus.cpp
+
+To run (in separate terminal clients):
+- make run_linus
+- make run_client
+- make run_client_2
+- make run_client_3
 
 ### Open questions:
 
 How do we efficiently debug a program that takes upwards of 10 minutes to get to the crashing point? If running on big data causes the problems how should we avoid waiting for the program to crash every time we try to run it?
 
 ### Status:
-
-To prevent the program from segfaulting as is, reduce the BYTES_TO_READ size or comment out the users and projects dataframe puts. 
 
 - Eau2 works entirely on "small" data (less than 1GB for sure, unsure of exact upper limit).
 - However, the datastore works 100% even on large data.

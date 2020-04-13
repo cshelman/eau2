@@ -11,24 +11,27 @@ int main(int argc, char** argv) {
     Server* serv = new Server(net_serv);
     
     // ------------------- DEGREES OF LINUS CONFIG VALUES ---------------------
-    size_t BYTES_TO_READ = 100000000;
+    size_t BYTES_TO_READ = 10000000;
     int LINUS = 4967;
     int DEGREE = 4;
+    char* COMMITS_PATH = (char*)"data/commits.ltgt";
+    char* USERS_PATH = (char*)"data/users.ltgt";
+    char* PROJECTS_PATH = (char*)"data/projects.ltgt";
     // ------------------------------------------------------------------------
 
     size_t uid_size = 0;
     size_t pid_size = 0;
-    DataFrame* commits_df = parseSor((char*)"data/commits.ltgt", 0, BYTES_TO_READ, &uid_size, &pid_size);
+    DataFrame* commits_df = parseSor(COMMITS_PATH, 0, BYTES_TO_READ, &uid_size, &pid_size);
     Key* commits_key = new Key("commits");
     serv->put(commits_key, commits_df);
     delete commits_df;
     
-    DataFrame* users_df = parseSor((char*)"data/users.ltgt", 0, BYTES_TO_READ);
+    DataFrame* users_df = parseSor(USERS_PATH, 0, BYTES_TO_READ);
     Key* users_key = new Key("users");
     serv->put(users_key, users_df);
     delete users_df;
 
-    DataFrame* projects_df = parseSor((char*)"data/projects.ltgt", 0, BYTES_TO_READ);
+    DataFrame* projects_df = parseSor(PROJECTS_PATH, 0, BYTES_TO_READ);
     Key* projects_key = new Key("projects");
     serv->put(projects_key, projects_df);
     delete projects_df;
