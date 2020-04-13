@@ -22,12 +22,6 @@ public:
     vector<Column*>* col_arr;
     Schema* schema_;
 
-    /** Create a data frame with the same columns as the given df but with no rows or rownmaes */
-    DataFrame(DataFrame& df) {
-      col_arr = df.col_arr;
-      schema_->types_ = df.schema_->types_;
-    }
-
     /** Create a data frame from a schema and columns. All columns are created
       * empty. */
     DataFrame(Schema& schema) {
@@ -285,14 +279,13 @@ public:
             fill_row(i, *cur_row);
             cur_row->set_idx(i);
             r->accept(*cur_row);
-            delete cur_row;
         }
     }
 
     /** This method clones the Rower and executes the map in parallel. Join is
      *  used at the end to merge the results. */
     void pmap(Rower& r) {
-        size_t rower_rows = 128;
+        size_t rower_rows = nrows() / 10;
         size_t num_rowers = (nrows() / rower_rows) + 1;
 
         thread* threads[num_rowers];

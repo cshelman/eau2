@@ -9,88 +9,69 @@
 int main(int argc, char** argv) {
     NetworkServer* net_serv = new NetworkServer(argv[1], atoi(argv[2]));
     Server* serv = new Server(net_serv);
-
-    size_t BYTES_TO_READ = SIZE_MAX;
-    // DataFrame* users_df = parseSor((char*)"data/users.ltgt", 0, BYTES_TO_READ);
-    DataFrame* commits_df = parseSor((char*)"data/commits.ltgt", 0, BYTES_TO_READ);
-    // DataFrame* projects_df = parseSor((char*)"data/projects.ltgt", 0, BYTES_TO_READ);
-
-    // char temp;
-    // printf("PRESS X TO PUT...");
-    // cin >> temp;
-    // printf("\n");
     
-    printf("starting put to server");
+    // ------------------- DEGREES OF LINUS CONFIG VALUES ---------------------
+    size_t BYTES_TO_READ = 100000000;
+    int LINUS = 4967;
+    int DEGREE = 4;
+    // ------------------------------------------------------------------------
+
+    size_t uid_size = 0;
+    size_t pid_size = 0;
+    DataFrame* commits_df = parseSor((char*)"data/commits.ltgt", 0, BYTES_TO_READ, &uid_size, &pid_size);
     Key* commits_key = new Key("commits");
     serv->put(commits_key, commits_df);
-    //serv->put(commits_key, commits_df);
-    //serv->put(commits_key, commits_df);
+    delete commits_df;
+    
+    DataFrame* users_df = parseSor((char*)"data/users.ltgt", 0, BYTES_TO_READ);
+    Key* users_key = new Key("users");
+    serv->put(users_key, users_df);
+    delete users_df;
 
-    // printf("PRESS X TO COUNT...");
-    // cin >> temp;
-    // printf("\n");
+    DataFrame* projects_df = parseSor((char*)"data/projects.ltgt", 0, BYTES_TO_READ);
+    Key* projects_key = new Key("projects");
+    serv->put(projects_key, projects_df);
+    delete projects_df;
 
-    int ARR_SIZE = 3000000;
-    int LINUS = 4967; // Linus' ID
-    int DEGREE = 1;
+    uid_size++;
+    pid_size++;
 
-    bool* uids = new bool[ARR_SIZE]; //set linus to true
+    bool* uids = new bool[uid_size];
+    memset(uids, '\0', uid_size);
     uids[LINUS] = true;
 
-
     for (int i = 0; i < DEGREE; i++) {
-        printf("\nDEGREE IS %d\n", i+1);
-        FindProjectsRower* fpr = new FindProjectsRower(uids, ARR_SIZE, ARR_SIZE);
+        printf("\nSTART DEGREE %d\n", i+1);
+        FindProjectsRower* fpr = new FindProjectsRower(uids, uid_size, pid_size);
         serv->set_rower(fpr);
         serv->run_rower(commits_key, fpr);
         bool* pids = fpr->project_ids;
-        printf("\tDone getting pids\n");
 
-        // for (int j = 0; j < ARR_SIZE; j++) {
-        //     if (pids[j]) {
-        //         printf("pid %d\n", j);
-        //     }
-        // }
-        // printf("\n\n");
-
-        FindUsersRower* fur = new FindUsersRower(pids, ARR_SIZE, ARR_SIZE);
+        FindUsersRower* fur = new FindUsersRower(pids, pid_size, uid_size);
         serv->set_rower(fur);
         serv->run_rower(commits_key, fur);
-        uids = fur->user_ids;
-        printf("\tDone getting uids\n");
+        memcpy(uids, fur->user_ids, uid_size * sizeof(bool));
         
         size_t count = 0;
-        for (int j = 0; j < ARR_SIZE; j++) {
+        for (int j = 0; j < uid_size; j++) {
             if (uids[j]) {
                 count++;
             }
         }
-        printf("\tDegree %d users: %ld\n", i, count);
-
+        
+        printf("\tDegree %d: %ld users found\n", i+1, count);
         delete fpr;
         delete fur;
     }
 
-    
-    // printf("fpr->p_size: %ld\n", fpr->p_size);
-    // for (int i = 0; i < fpr->p_size; i++) {
-    //     printf("%d", find_projects[i]);
-    // }
-    // printf("\n");
-
-    // printf("PRESS X TO SHUTDOWN...");
-    // cin >> temp;
-    // printf("\n");
-
     serv->shutdown();
 
     delete serv;
+    delete net_serv;
     delete commits_key;
-    // delete users_df;
-    // delete projects_df;
-    delete commits_df;
-    delete uids;
+    delete users_key;
+    delete projects_key;
 
-    printf("Linus test: SUCCESS\n");
+    printf("Linus: SUCCESS\n");
     return 0;
 }

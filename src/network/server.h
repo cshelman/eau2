@@ -15,6 +15,7 @@
 
 using namespace std;
 
+// The master server used to orchestrate the clients for eau2
 class Server {
 public:
     NetworkServer* net;
@@ -26,21 +27,35 @@ public:
         net->registration();
     }
 
+    // Shuts down (or instructs to shut down) the following:
+    // - Clients
+    // - Nodes
+    // - Network Server
     void shutdown() {
         string name = "KILL";
-        Message* kill_msg = new Message(MsgType::Kill, new Key(name), (char*)"KILL", -1);
+        Key* key = new Key(name);
+        Message* kill_msg = new Message(MsgType::Kill, key, (char*)"KILL", -1);
         for (int i = 0; i < net->num_nodes; i++) {
             net->send_msg(i, kill_msg);
         }
+        delete key;
+        delete kill_msg;
         net->shutdown();
     }
 
+    // Instructs each client to run their rower against the given dataframe
+    // Receives resulting rowers after they are run against the df
+    // Joins the rowers and returns the final result
     void run_rower(Key* key, Rower* rower) {
+
+        // Send the instruction to run the rower
         Message* msg = new Message(MsgType::Act, key, (char*)"ACT", -1);
         for (size_t i = 0; i < net->num_nodes; i++) {
             net->send_msg(i, msg);
         }
+        delete msg;
 
+        // Receive the rowers in pieces then put the pieces together
         vector<Rower*>* rowers = new vector<Rower*>();
         map<size_t, string>* response_map = new map<size_t, string>();
         size_t end_count = 0;
@@ -75,12 +90,16 @@ public:
             }
         }
 
+        // Join the rowers
         for (int i = 0; i < rowers->size(); i++) {
-            WordCountRower* wr = dynamic_cast<WordCountRower*>(rower);
             rower->join_delete(rowers->at(i));
         }
+        rowers->clear();
+        delete rowers;
+        delete response_map;
     }
 
+    // Retrieves a previously inserted dataframe from the distributed KV store
     DataFrame* get(Key* key) {
         Message* msg = new Message(MsgType::Get, key, (char*)"GET", -1);
 
@@ -111,7 +130,6 @@ public:
                             df_cols->at(j)->append(node_cols->at(j));
                         }
                     }
-                    
                     delete ret_msg;
                     break;
                 }
@@ -130,6 +148,7 @@ public:
             }
         }
 
+        // Reconstruct the dataframe from the received subcolumns
         Schema* schema = new Schema();
         schema->num_rows_ = df_cols->at(0)->size();
         DataFrame* df = new DataFrame(*schema);
@@ -139,6 +158,8 @@ public:
         return df;
     }
 
+    // Puts a given dataframe into the distributed KV store
+    // Splitting the data up by creating subcolumns
     void put(Key* key, DataFrame* df) {
         vector<Column*>* col_arr = new vector<Column*>(*df->col_arr);
         int entries_per_node = df->nrows() / net->num_nodes;
@@ -156,7 +177,8 @@ public:
             }
             for (int j = 0; j < col_arr->size(); j++) {
                 //gets rows from (i * entries_per_node) to (i * entries_per_node) + entries_per_node
-                sub_cols->push_back(col_arr->at(j)->get_subset(offset, offset +  entries_per_node));
+                Column* subset = col_arr->at(j)->get_subset(offset, offset +  entries_per_node);
+                sub_cols->push_back(subset);
             }
 
             // serialize sub columns
@@ -164,63 +186,51 @@ public:
             if (sub_cols->size() > 0) {
                 val = serialize_col_vector(sub_cols);
             }
+            for (int j = 0; j < sub_cols->size(); j++) {
+                delete sub_cols->at(j);
+            }
+            sub_cols->clear();
             delete sub_cols;
 
             // send serialized package
             vector<Message*>* messages = parse_msg(MsgType::Put, key, (char*)val.c_str(), -1);
             for (int j = 0; j < messages->size(); j++) {
                 net->send_msg(i, messages->at(j));
+                delete messages->at(j);
             }
             
             delete messages;
         }
         
+        for (int i = 0; i < col_arr->size(); i++) {
+            delete col_arr->at(i);
+        }
+        col_arr->clear();
         delete col_arr;
-        // for (int i = 0; i < net->num_nodes; i++) {
-        //     // calculate number of columns to send to this node
-        //     int cur_size = min_cols_per_node;
-        //     if (rem > 0) {
-        //         cur_size++;
-        //         rem--;
-        //     }
-
-        //     // add the columns to the column vector to send
-        //     vector<Column*>* cols_to_send = new vector<Column*>();
-        //     for (int j = 0; j < cur_size; j++) {
-        //         cols_to_send->push_back(col_arr->front());
-        //         col_arr->erase(col_arr->begin());
-        //     }
-
-        //     // serialize columns
-        //     string val = "";
-        //     if (cols_to_send->size() > 0) {
-        //         val = serialize_col_vector(cols_to_send);
-        //     }
-        //     delete cols_to_send;
-
-        //     // send serialized package
-        //     vector<Message*>* messages = parse_msg(MsgType::Put, key, (char*)val.c_str(), -1);
-        //     for (int j = 0; j < messages->size(); j++) {
-        //         net->send_msg(i, messages->at(j));
-        //     }
-            
-        //     delete messages;
-        // }
-        // delete col_arr;
     }
 
+    // Sends the given rower to each client
+    // The clients then hold the rower in memory until triggered to be sent
     void set_rower(Rower* r) {
         Key* key = new Key("SET_ROWER");
-        vector<Message*>* messages = parse_msg(MsgType::SetRower, key, (char*)r->serialize()->c_str(), -1);
+        string* serialized_rower = r->serialize();
+        vector<Message*>* messages = parse_msg(MsgType::SetRower, key, (char*)serialized_rower->c_str(), -1);
         for (int i = 0; i < net->num_nodes; i++) {
             // send serialized package
             for (int j = 0; j < messages->size(); j++) {
                 net->send_msg(i, messages->at(j));
             }
         }
+        delete serialized_rower;
+        for (int i = 0; i < messages->size(); i++) {
+            delete messages->at(i);
+        }
         delete messages;
+        delete key;
     }
 
+    // Splits up really large messages into smaller messages so they can be
+    // Sent over the network, TODO: Move to util file
     vector<Message*>* parse_msg(MsgType type, Key* key, char* s, size_t sender) {
         vector<Message*>* messages = new vector<Message*>();
         string* str = new string(s);
@@ -246,8 +256,7 @@ public:
         }
         Message* end_msg = new Message(type, key, (char*)"END", sender);
         messages->push_back(end_msg);
+        delete str;
         return messages;
     }
-    
-    DataFrame* wait_and_get(Key key) {}
 };

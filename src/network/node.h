@@ -12,6 +12,7 @@
 
 using namespace std;
 
+//the distributed KV store of eau2, this runs on each client
 class Node {
 public:
     unordered_map<string, DataFrame*>* pairs;
@@ -23,20 +24,21 @@ public:
     }
 
     ~Node() {
+        pairs->clear();
         delete pairs;
     }
 
-    Rower* apply(Rower* rower, Key* key) {
+    //runs a rower on the dataframe that corresponds to the given key
+    void apply(Rower* rower, Key* key) {
         if (pairs->count(key->name) > 0) {
             DataFrame* df = pairs->at(key->name);
             df->pmap(*rower);
-            return rower;
         }
         else {
             printf("ACT: node %ld did not contain key: %s\n", id, (char*)key->name.c_str());
-            return rower;
         }
     }
+    
 
     char* get(Key* key) {
         if (pairs->count(key->name) > 0) {
@@ -69,6 +71,8 @@ public:
             
             vector<Column*>* col_arr = deserialize_col_vector(data);
 
+            //we receive a vector of columns from the client
+            //the following code constructs a df from that vector
             Schema* schema = new Schema();
             schema->num_rows_ = col_arr->at(0)->size();
             DataFrame* df = new DataFrame(*schema);
@@ -76,7 +80,7 @@ public:
             for (int i = 0; i < col_arr->size(); i++) {
                 df->add_column(col_arr->at(i));
             }
-            
+          
             pairs->insert({key->name, df});
         }
     }

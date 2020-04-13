@@ -26,6 +26,7 @@
 
 using namespace std;
 
+//communicates with clients
 class NetworkServer {
 public:
     char* ip;
@@ -57,50 +58,24 @@ public:
     }
 
     ~NetworkServer() {
+        delete master_queue;
         delete client_ips;
         delete client_sockets;
         delete ts;
     }
 
-    // backticks are not a valid character to send
-    char* encode(string s) {
+    //adds number of bytes in the given string as 4 digit number 
+    //padded with 0s to the beginning of the string
+    string* encode(string s) {
         stringstream ss;
         ss << setw(4) << setfill('0') << (s.size() + 1);
         string* result = new string(ss.str());
         result->append(s);
 
-        return (char*)result->c_str();
+        return result;
     }
 
-    vector<string>* decode(char* s, int bytes_read) {
-        vector<string>* decoded_strings = new vector<string>();
-        int start = 0;
-        bool in_msg = false;
-        int tic_counter = 0;
-
-        for (int i = 0; i < bytes_read; i++) {
-            if (s[i] == '`') {
-                tic_counter ++;
-                if (in_msg && tic_counter == 3) {
-                    char* decoded = new char[i - start - 1];
-                    memcpy(decoded, s + start, i - start - 2);
-                    string str(decoded);
-                    decoded_strings->push_back(str);
-                    delete[] decoded;
-                    tic_counter = 0;
-                }
-                else if (tic_counter == 3) {
-                    start = i + 1;
-                }
-                in_msg = !in_msg;
-            }
-            else {
-                tic_counter = 0;
-            }
-        }
-        return decoded_strings;
-    }
-
+    //starts listening on the given ip/port
     void startup() {
         int yes = 1;
         assert((sock_fd = socket(AF_INET, SOCK_STREAM, 0)) > 0);
@@ -109,20 +84,25 @@ public:
         assert(listen(sock_fd, 10) >= 0);
     }
 
+    //encodes and then sends message to given client
     void send_msg(int node, Message* msg) {
-        Message* temp = msg->copy();
-        string s = serialize_message(msg);
-        char* encoded = encode(s);
-        int bytes = send(atoi(client_sockets->at(node)), encoded, strlen(encoded) + 1, 0);
+        string* s = serialize_message(msg);
+        string* encoded = encode(*s);
+        int bytes = send(atoi(client_sockets->at(node)), (char*)encoded->c_str(), encoded->size() + 1, 0);
+        delete encoded;
+        delete s;
     }
 
+    //listens for incoming messages from each client
+    //runs in a different thread for each client connected to network
     void listening(char* client_sock) {
-        while(true) {
+        while (true) {
             char* size = new char[4];
 
             recv(atoi(client_sock), size, 4, 0);
             int bytes_read = 0;
             int bytes_to_read = atoi(size);
+            delete[] size;
 
             if (bytes_to_read > 0) {
                 char* buffer = new char[bytes_to_read];
@@ -134,6 +114,7 @@ public:
                 
                 Message* msg = deserialize_message((char*)buffer);
                 master_queue->push(msg);
+                delete[] buffer;
             }
             else {
                 break;
@@ -141,10 +122,12 @@ public:
         }
     }
 
+    //queue holds messages from clients in received order
     Message* recv_master() {
         return master_queue->pop();
     }
 
+    //waits for the given number of clients to join the network
     void registration() {
         while (client_ips->size() < num_nodes) {
             string* buffer = new string();
@@ -169,6 +152,7 @@ public:
         }
     }
 
+    //kills all threads listening to the clients
     void shutdown() {
         alive = false;
         for (int i = 0; i < client_sockets->size(); i++) {

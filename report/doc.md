@@ -1,77 +1,64 @@
 ### Introduction:
  
-The eau2 is a distributed key value store. Nodes are clients from our client server network we created previously. Each node has part of the data.. How it works: Store a dataframe by putting it into the key value store. The key value store then converts the DataFrame into a byte array. The byte array is then split up into n chunks, where n is the number of nodes in our network. Each chunk is sent to a different node. When a dataframe get call is made to the key value store the store gets the different chunks from each of the nodes and  combines them back together. It then deserializes the byte array into a DataFrame object and returns the object to the caller.
+The eau2 is a distributed key value store. Nodes are run withing clients from our client server network we created previously. Each node holds a section of the columns of a inserted dataframe, and can run rower operation on its section. How it works: Store a dataframe by putting it into the key value store. The key value store then splits the columns of the dataframe into subcolumns. The subcolumns are serialized into a byte array and each byte array is sent to a different client. The clients then deserialize and reconstruct the subset dataframe. The reconstructed dataframe is inserted into the node's internal key value store alongside the key that the put message arrived with.
+
+When a dataframe get call is made to the key value store, the store sends a get message to each client. The clients then pull the dataframes out of their nodes, serialize them, and send them back to the server. The server deserializes each group of subcolumns, puts them back together, and reconstructs the original dataframe from them.
+
+The eau2 has functionality to run distributed calculations (via rowers) as well. After storing a dataframe, the server can send action messages to trigger the clients to run a specific rower on the node's stored subdataframes. The clients then serialize and send the rowers back to the server, which joins them together to produce the resulting data.
 
 ### Architecture: 
- 
-Application Layer: The user creates a key value store class and can put dataframes into the store. The key value store takes in a list of nodes which need to be created prior to the creation of the store.
- 
-Key Value Store: Converts the data into bytes and distributes the bytes between the nodes in the network. Each node uses the same key for the same dataframe. For example if a user wanted to add a dataframe with the key “df1”, each node would have an entry in its map where the key is “df1” and the value is a portion of the serialized dataframe.
- 
-Nodes: Store the serialized data frame in a map. They have get and put methods to access the bytes the node is keeping track of.
 
+ Server -           tells the NetworkServer what to send/gets stuff from clients through NetworkServer
+ NetworkServer -    communicates with clients
+ Client -           runs the nodes in distributed network, communicates with server
+ Node -             client class sends received messages to Node, actual KV pairs stored here 
+ Rower -            runs operations on the DataFrame
+ 
 ### Implementation: 
  
-Key: essentially a wrapper for a string at the moment.
-    Home node was removed as each dataframe is stored equally on each node.
-    Still exists in case we want to bring back the home node field.
- 
-Server: takes a list of existing nodes and uses them as distributed KV storage.
-    Takes and returns dataframes, but internally sends around serialized byte sequences.
-    put() chunks up dataframes into num_nodes chunks, then distributes them evenly.
-    get() requests the chunks from each node, then reassembles them in order and deserializes.
- 
-Node: uses an unordered_map internally to store KV pairs.
+On Server
+----------------
+Create a NetworkServer
+Create a Server which takes an instance of a NetworkServer
+Create a DataFrame
+Upload DataFrame to distributed network by calling Server->put(Key* key, DataFrame* df)
+Run operations on the DataFrame by creating a Rower and calling Server->run_rower(Rower* r, DataFrame* df)
+Get a DataFrame from the distributed network by calling Server->get(Key* key)
+
+On Client
+---------------- 
+Create a Client
+Run Client->register_ip() to register client to network
+Run Client->be_client() to start client
 
 ### Use cases:
 
 Makefile commands:
-make - builds each test case
 make run_[word_count] - runs the word count application in a non-distributed manner
-make run_[server/client] - run the server, then the client in separate processes. Server cli: server_ip num_clients. Client cli: client_ip server_ip.
-make build_[dataframe/serialize/fake_network] - builds a specific test case
-make run - build and runs each test case
-make run_[dataframe/serialize/fake_network] - builds and runs a specific test case
-make valgrind - builds each test case, then runs valgrind (with --leak-check=full) on each of them
-make valgrind_[dataframe/serialize/fake_network] - builds then runs valgrind on a specific test case
+make run_[linus/server/client] - run the server (or linus as server), then the client in separate processes. Server cli: server_ip num_clients. Client cli: client_ip server_ip.
+make build_[...] - builds a specific test case
+make run_[...] - builds and runs a specific test case
+make valgrind_[...] - builds then runs valgrind (with --leak-check=full) on a specific test case
 
-    Dataframe df1();
-    int num_nodes = 3;
+See linus.cpp and test_client.cpp for how to set up and run the degrees of linus program.
 
-    FakeNetwork* net = new FakeNetwork(num_nodes);
-    KVStore* kv = new KVStore(net);
-
-    thread* ts[num_nodes];
-    for (int i = 0; i < num_nodes; i++) {
-        ts[i] = new thread(fake_network_callback, i);
-    }
-
-    Key* k1 = new Key("key_name");
-    kv->put(k1, df1);
-    Dataframe df2 = kv->get(k1);
-    kv->shutdown();
-
-    for (int i = 0; i < num_nodes; i++) {
-        ts[i]->join();
-    }
-
-    assert(df1->equals(df2));
-
-    delete kv;
-    delete k1;
-    delete df1;
-    delete df2;
+Currently the makefile specifies that the linus program will run with 3 clients, but this can be changed either in the makefile or by running from the command line?
 
 ### Open questions:
 
-How do we shut down the server if we are blocking in a receive loop waiting for messages from clients?
+How do we efficiently debug a program that takes upwards of 10 minutes to get to the crashing point? If running on big data causes the problems how should we avoid waiting for the program to crash every time we try to run it?
 
 ### Status:
 
-- Everything works except for the ability to shut down gracefully and run rower actions on the dataframe in a distributed way.
-- Word count program is entirely working. But at the moment is only demonstratable with the fake network.
-- Fake networking with threads is working 100%.
-- We have separate large scale tests for each “section” of work in the tests directory. These tests cover many of the smaller unit cases as well as testing the ability to perform the full task.
-- The tests for networking at the moment have to be run manually.
-- We need many more unit tests.
-- Everything leaks memory at a truly astounding rate, we will be working on this.
+To prevent the program from segfaulting as is, reduce the BYTES_TO_READ size or comment out the users and projects dataframe puts. 
+
+- Eau2 works entirely on "small" data (less than 1GB for sure, unsure of exact upper limit).
+- However, the datastore works 100% even on large data.
+- On large data the clients segfault when we attempt to run rower operations.
+    - we suspect it is a memory related issue when sending the large rowers (but we aren't sure).
+- Memory leaks are still a small issue, but we have fixed nearly all major contributors.
+- Degrees of linus currently has to be run from multiple processes, there is no single file demo.
+
+TODOs:
+- create util file for repeated functions (parse_messages, encode).
+- write more unit level tests.

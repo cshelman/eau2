@@ -96,6 +96,7 @@ vector<String*>* deserialize_str_vector(char* s) {
         String* temp = deserialize_string((char*)token.c_str());
         vs->push_back(temp);
     }
+    delete str;
     return vs;
 }
 
@@ -131,6 +132,7 @@ vector<int>* deserialize_int_vector(char* s) {
         int temp = deserialize_int((char*)token.c_str());
         vi->push_back(temp);
     }
+    delete str;
     return vi;
 }
 
@@ -166,6 +168,7 @@ vector<bool>* deserialize_bool_vector(char* s) {
         bool temp = deserialize_bool((char*)token.c_str());
         vb->push_back(temp);
     }
+    delete str;
     return vb;
 }
 
@@ -201,39 +204,40 @@ vector<float>* deserialize_float_vector(char* s) {
         float temp = deserialize_float((char*)token.c_str());
         vf->push_back(temp);
     }
+    delete str;
     return vf;
 }
 
 string serialize_col_vector(vector<Column*>* vc) {
 
-    string* serialized_vector = new string("{");
+    string serialized_vector("{");
     
     for (int i = 0; i < vc->size(); i++) {
         Column* c = vc->at(i);
         if(c->get_type() == 'I') {
-            *serialized_vector += "`I`:";
+            serialized_vector += "`I`:";
             string sv = serialize_int_vector(dynamic_cast<IntColumn*>(c)->arr);
-            *serialized_vector += sv;
+            serialized_vector += sv;
         } else if(c->get_type() == 'F') {
-            *serialized_vector += "`F`:";
+            serialized_vector += "`F`:";
             string sv = serialize_float_vector(dynamic_cast<FloatColumn*>(c)->arr);
-            *serialized_vector += sv;
+            serialized_vector += sv;
         } else if(c->get_type() == 'S') {
-            *serialized_vector += "`S`:";
+            serialized_vector += "`S`:";
             string sv = serialize_str_vector(dynamic_cast<StringColumn*>(c)->arr);
-            *serialized_vector += sv;
+            serialized_vector += sv;
         } else if(c->get_type() == 'B') {
-            *serialized_vector += "`B`:";
+            serialized_vector += "`B`:";
             string sv = serialize_bool_vector(dynamic_cast<BoolColumn*>(c)->arr);
-            *serialized_vector += sv;
+            serialized_vector += sv;
         }
 
         if (i < vc->size() - 1) {
-            *serialized_vector += ",";
+            serialized_vector += ",";
         }
     }
-    *serialized_vector += "}";
-    return *serialized_vector;
+    serialized_vector += "}";
+    return serialized_vector;
 }
 
 vector<Column*>* deserialize_col_vector(char* s) {
@@ -257,26 +261,28 @@ vector<Column*>* deserialize_col_vector(char* s) {
         
         if (type == "I") {
             vector<int>* vi = deserialize_int_vector((char*)token.substr(3, token.size() - 3).c_str());
-            IntColumn* ic = new IntColumn();
-            ic->arr = vi;
+            IntColumn* ic = new IntColumn(vi);
+            delete vi;
             vc->push_back(ic);
         } else if (type == "F") {
             vector<float>* vf = deserialize_float_vector((char*)token.substr(3, token.size() - 3).c_str());
-            FloatColumn* fc = new FloatColumn();
-            fc->arr = vf;
+            FloatColumn* fc = new FloatColumn(vf);
+            delete vf;
             vc->push_back(fc);
         } else if (type == "S") {
             vector<String*>* vs = deserialize_str_vector((char*)token.substr(3, token.size() - 3).c_str());
-            StringColumn* sc = new StringColumn();
-            sc->arr = vs;
+            StringColumn* sc = new StringColumn(vs);
+            delete vs;
             vc->push_back(sc);
         } else if (type == "B") {
             vector<bool>* vb = deserialize_bool_vector((char*)token.substr(3, token.size() - 3).c_str());
-            BoolColumn* bc = new BoolColumn();
-            bc->arr = vb;
+            BoolColumn* bc = new BoolColumn(vb);
+            delete vb;
             vc->push_back(bc);
         }
     }
+
+    delete str;
     return vc;
 }
 
@@ -289,7 +295,7 @@ MsgType deserialize_msg_type(char* s) {
     return type;
 }
 
-string serialize_message(Message* msg) {
+string* serialize_message(Message* msg) {
     string* serialized_msg = new string("{");
     serialized_msg->append("`[");
     serialized_msg->append(serialize_size_t(msg->sender));
@@ -301,7 +307,7 @@ string serialize_message(Message* msg) {
     serialized_msg->append(msg->contents);
     serialized_msg->append("]`}");
 
-    return *serialized_msg;
+    return serialized_msg;
 }
 
 Message* deserialize_message(char* s) {
@@ -351,5 +357,6 @@ Message* deserialize_message(char* s) {
     delete name;
     delete contents;
     delete key;
+    delete str;
     return msg;
 }

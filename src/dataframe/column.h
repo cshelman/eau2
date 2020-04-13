@@ -96,12 +96,17 @@ public:
 
     IntColumn(IntColumn* col) {
         type = col->type;
-        arr = col->arr;
+        arr = new vector<int>(*col->arr);
     }
 
     IntColumn() {
         type = 'I';
         arr = new vector<int>();
+    }
+
+    IntColumn(vector<int>* iv) {
+        type = 'I';
+        arr = new vector<int>(*iv);
     }
 
     IntColumn(int n, ...) {
@@ -131,8 +136,9 @@ public:
         vector<int>::const_iterator first = arr->begin() + start;
         vector<int>::const_iterator last = arr->begin() + end;
 
-        IntColumn* ic = new IntColumn();
-        ic->arr = new vector<int>(first, last);
+        vector<int>* iv = new vector<int>(first, last);
+        IntColumn* ic = new IntColumn(iv);
+        delete iv;
         return ic;
     }
 
@@ -146,15 +152,7 @@ public:
 
     void append(Column* c) {
         IntColumn* ic = c->as_int();
-        // printf("APPENDING: \n");
-        // for(int i = 0; i < ic->arr->size(); i++) {
-        //     printf("arr[%d] = %d\n", i, ic->arr->at(i));
-        // }
         arr->insert(arr->end(), ic->arr->begin(), ic->arr->end());
-        // printf("AFTER APPENDING: \n");
-        // for(int i = 0; i < arr->size(); i++) {
-        //     printf("arr[%d] = %d\n", i, arr->at(i));
-        // }
     }
 
     /** Set value at idx. An out of bound idx is undefined.  */
@@ -182,12 +180,17 @@ public:
 
     FloatColumn(FloatColumn* col) {
         type = col->type;
-        arr = col->arr;
+        arr = new vector<float>(*col->arr);
     }
 
     FloatColumn() {
         type = 'F';
         arr = new vector<float>();
+    }
+
+    FloatColumn(vector<float>* fv) {
+        type = 'F';
+        arr = new vector<float>(*fv);
     }
 
     FloatColumn(int n, ...) {
@@ -217,8 +220,9 @@ public:
         vector<float>::const_iterator first = arr->begin() + start;
         vector<float>::const_iterator last = arr->begin() + end;
 
-        FloatColumn* fc = new FloatColumn();
-        fc->arr = new vector<float>(first, last);
+        vector<float>* fv = new vector<float>(first, last);
+        FloatColumn* fc = new FloatColumn(fv);
+        delete fv;
         return fc;
     }
 
@@ -260,12 +264,17 @@ public:
 
     BoolColumn(BoolColumn* col) {
         type = col->type;
-        arr = col->arr;
+        arr = new vector<bool>(*col->arr);
     }
 
     BoolColumn() {
         type = 'B';
         arr = new vector<bool>();
+    }
+
+    BoolColumn(vector<bool>* bv) {
+        type = 'B';
+        arr = new vector<bool>(*bv);
     }
 
     BoolColumn(int n, ...) {
@@ -304,8 +313,9 @@ public:
         vector<bool>::const_iterator first = arr->begin() + start;
         vector<bool>::const_iterator last = arr->begin() + end;
 
-        BoolColumn* bc = new BoolColumn();
-        bc->arr = new vector<bool>(first, last);
+        vector<bool>* bv = new vector<bool>(first, last);
+        BoolColumn* bc = new BoolColumn(bv);
+        delete bv;
         return bc;
     }
 
@@ -339,12 +349,33 @@ public:
 
     StringColumn(StringColumn* col) {
         type = col->type;
-        arr = new vector<String*>(*col->arr);
+        arr = new vector<String*>();
+        for (int i = 0; i < col->arr->size(); i++) {
+            if (col->arr->at(i) != nullptr) {
+                arr->push_back(col->arr->at(i)->clone());
+            }
+            else {
+                arr->push_back(nullptr);
+            }
+        }
     }
 
     StringColumn() {
         type = 'S';
         arr = new vector<String*>();
+    }
+
+    StringColumn(vector<String*>* sv) {
+        type = 'S';
+        arr = new vector<String*>();
+        for (int i = 0; i < sv->size(); i++) {
+            if (sv->at(i) != nullptr) {
+                arr->push_back(sv->at(i)->clone());
+            }
+            else {
+                arr->push_back(nullptr);
+            }
+        }
     }
 
     StringColumn(int n, ...) {
@@ -363,7 +394,9 @@ public:
     }
 
     ~StringColumn() {
-        arr->clear();
+        for (int i = 0; i < arr->size(); i++) {
+            delete arr->at(i);
+        }
         delete arr;
     }
 
@@ -394,8 +427,9 @@ public:
         vector<String*>::const_iterator first = arr->begin() + start;
         vector<String*>::const_iterator last = arr->begin() + end;
 
+        vector<String*>* sv = new vector<String*>(first, last);
         StringColumn* sc = new StringColumn();
-        sc->arr = new vector<String*>(first, last);
+        delete sv;
         return sc;
     }
 

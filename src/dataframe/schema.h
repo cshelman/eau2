@@ -24,9 +24,33 @@ public:
     Schema(Schema& from) {
         num_cols_ = from.num_cols_;
         num_rows_ = from.num_rows_;
-        types_ = new vector<String*>(*from.types_);
-        col_names_ = new vector<String*>(*from.col_names_);
-        row_names_ = new vector<String*>(*from.row_names_);
+        types_ = new vector<String*>();
+        for (int i = 0; i < from.types_->size(); i++) {
+            if (from.types_->at(i) != nullptr) {
+                types_->push_back(from.types_->at(i)->clone());
+            }
+            else {
+                types_->push_back(nullptr);
+            }
+        }
+        col_names_ = new vector<String*>();
+        for (int i = 0; i < from.col_names_->size(); i++) {
+            if (from.col_names_->at(i) != nullptr) {
+                col_names_->push_back(from.col_names_->at(i)->clone());
+            }
+            else {
+                col_names_->push_back(nullptr);
+            }
+        }
+        row_names_ = new vector<String*>();
+        for (int i = 0; i < from.row_names_->size(); i++) {
+            if (from.row_names_->at(i) != nullptr) {
+                row_names_->push_back(from.row_names_->at(i)->clone());
+            }
+            else {
+                row_names_->push_back(nullptr);
+            }
+        }
     }
  
     /** Create an empty schema **/
@@ -39,8 +63,17 @@ public:
     }
 
     ~Schema() {
+        for (int i = 0; i < types_->size(); i++) {
+            delete types_->at(i);
+        }
         delete types_;
+        for (int i = 0; i < col_names_->size(); i++) {
+            delete col_names_->at(i);
+        }
         delete col_names_;
+        for (int i = 0; i < row_names_->size(); i++) {
+            delete row_names_->at(i);
+        }
         delete row_names_;
     }
 

@@ -60,14 +60,17 @@ public:
 
     /** Build a row following a schema. */
     Row(Schema& scm) {
-      types_ = new vector<String*>(*scm.types_);
+      types_ = new vector<String*>();
+      for (int i = 0; i < scm.types_->size(); i++) {
+        types_->push_back(scm.types_->at(i)->clone());
+      }
       
       int_arr = new vector<int*>();
       bool_arr = new vector<bool*>();
       float_arr = new vector<float*>();
       string_arr = new vector<String*>();
 
-      for(int i = 0; i < scm.types_->size(); i++) {
+      for (int i = 0; i < scm.types_->size(); i++) {
         int_arr->push_back(nullptr);
         bool_arr->push_back(nullptr);
         float_arr->push_back(nullptr);
@@ -76,15 +79,23 @@ public:
     }
 
     ~Row() {
-      types_->clear();
-      int_arr->clear();
-      bool_arr->clear();
-      float_arr->clear();
-      string_arr->clear();
+      // dont delete contents of types_, still pointers
       delete types_;
+      for (int i = 0; i < int_arr->size(); i++) {
+        delete int_arr->at(i);
+      }
       delete int_arr;
+      for (int i = 0; i < bool_arr->size(); i++) {
+        delete bool_arr->at(i);
+      }
       delete bool_arr;
+      for (int i = 0; i < float_arr->size(); i++) {
+        delete float_arr->at(i);
+      }
       delete float_arr;
+      for (int i = 0; i < string_arr->size(); i++) {
+        delete string_arr->at(i);
+      }
       delete string_arr;
     }
 
@@ -248,22 +259,4 @@ public:
   Rower* clone() {
     return new EqualityRower();
   }
-
-  // char* serialize() {
-  //   string* str = new string("{");
-  //   str->append(serialize_bool(is_equal));
-  //   str->append("}");
-  //   return (char*)str->c_str();
-  // }
-
-  // Rower* deserialize(char* r) {
-  //   Rower* ret = clone();
-  //   string* ds = new string(r);
-
-  //   if (!deserialize_bool((char*)ds->substr(1, 1).c_str())) {
-  //     ret->dead_toggle();
-  //   }
-
-  //   return ret;
-  // }
 };

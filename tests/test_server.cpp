@@ -10,26 +10,13 @@ int main(int argc, char** argv) {
     Server* s = new Server(ns);
 
     DataFrame* df = parse_file("../dict.txt");
-
-    // char temp;
-    // printf("PRESS X TO PUT...");
-    // cin >> temp;
-    // printf("\n");
     
     Key* k1 = new Key("one");
     s->put(k1, df);
 
-    // printf("PRESS X TO COUNT...");
-    // cin >> temp;
-    // printf("\n");
-
     WordCountRower* wcr = new WordCountRower();
     wcr = dynamic_cast<WordCountRower*>(s->run_rower(k1, wcr));
     wcr->print();
-
-    // printf("PRESS X TO SHUTDOWN...");
-    // cin >> temp;
-    // printf("\n");
 
     s->shutdown();
 

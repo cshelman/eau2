@@ -18,7 +18,6 @@ public:
   size_t u_size;
 
   FindUsersRower(char* r) {
-
     string* sr = new string(r);
     int start_pos = sr->find(":") + 1;
     int end_pos = sr->find(":", start_pos);
@@ -39,17 +38,20 @@ public:
   }
 
   FindUsersRower(bool* pids, size_t s, size_t us) {
-    project_ids = pids;
     size = s;
+    project_ids = new bool[size];
+    memcpy(project_ids, pids, size * sizeof(bool));
+    
     u_size = us;
     user_ids = new bool[u_size];
     memset(user_ids, '\0', u_size);
   }
+
+  ~FindUsersRower() {
+    delete[] project_ids;
+    delete[] user_ids;
+  }
   
-  /*
-    DataFrame 3 commits:
-    cols: PID(int) UID[writer](int) UID[committer](int)
-  */
   bool accept(Row& r) {
     if (project_ids[r.get_int(0)]) {
         user_ids[r.get_int(1)] = true;

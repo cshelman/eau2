@@ -133,14 +133,15 @@ void test_col_vector() {
 void test_message() {
     Key* k1 = new Key("key_name");
     Message* m1 = new Message(MsgType::Get, k1, (char*)"different contents now 123123123", -1);
-    string sm1 = serialize_message(m1);
-    Message* m2 = deserialize_message((char*)sm1.c_str());
+    string* sm1 = serialize_message(m1);
+    Message* m2 = deserialize_message((char*)sm1->c_str());
 
     assert(m1->type == m2->type);
     assert(m1->key->name == m2->key->name);
     assert(strcmp(m1->contents, m2->contents) == 0);
 
     delete k1;
+    delete sm1;
     delete m1;
     delete m2;
 }

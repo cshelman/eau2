@@ -259,7 +259,7 @@ void print_type(int type) {
 }
 
 // entrance of the program
-DataFrame* parseSor(char* filePath, size_t from, size_t len)
+DataFrame* parseSor(char* filePath, size_t from, size_t len, size_t* highest_user, size_t* highest_project)
 {
     // open file
     ifstream file(filePath);
@@ -344,6 +344,8 @@ DataFrame* parseSor(char* filePath, size_t from, size_t len)
             if (r->col_type(i) == 'I') {
                 int val = stoi(row.at(i));
                 r->set(i, val);
+                if (i == 0 && *highest_project < val) *highest_project = val;
+                else if (i != 0 && *highest_user < val) *highest_user = val;
             }
             else if (r->col_type(i) == 'F') {
                 float f = stof(row.at(i));
@@ -370,7 +372,13 @@ DataFrame* parseSor(char* filePath, size_t from, size_t len)
 
     // close file
     file.close();
+    delete sc;
+    
     return df;
+}
 
-    return 0;
+DataFrame* parseSor(char* filePath, size_t from, size_t len) {
+    size_t u = 0;
+    size_t p = 0;
+    return parseSor(filePath, from, len, &u, &p);
 }

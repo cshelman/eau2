@@ -16,6 +16,12 @@ public:
 
     MessageQueue() {}
 
+    ~MessageQueue() {
+        for (int i = 0; i < mq.size(); i++) {
+            delete pop();
+        }
+    }
+
     void push(Message* msg) {
         mtx.lock();
         mq.push(msg);

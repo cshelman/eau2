@@ -35,7 +35,7 @@ public:
     }
 
     ~Message() {
-        delete contents;
+        delete[] contents;
         delete key;
     }
 

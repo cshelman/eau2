@@ -55,6 +55,8 @@ public:
 
         server_ip = strtok(server_address, ":");
         server_port = strtok(NULL, ":");
+
+        rower = nullptr;
     }
 
     ~Client() {
@@ -62,7 +64,7 @@ public:
     }
 
     void set_rower(Rower* r) {
-        rower = r;
+        rower = r->clone();
     }
 
     // create connection with server
@@ -85,86 +87,80 @@ public:
     void send_message(Key* key, char* contents) {
         vector<Message*>* msgs = parse_msg(MsgType::Put, key, contents, node->id);
         for (int i = 0; i < msgs->size(); i++) {
-            string serialized_msg = serialize_message(msgs->at(i));
-            char* encoded_msg = encode(serialized_msg);
-            send(server_sock, encoded_msg, strlen(encoded_msg) + 1, 0);
+            string* serialized_msg = serialize_message(msgs->at(i));
+            string* encoded_msg = encode(serialized_msg);
+            send(server_sock, (char*)encoded_msg->c_str(), encoded_msg->size() + 1, 0);
+            delete serialized_msg;
+            delete encoded_msg;
         }
+        delete msgs;
     }
 
-    vector<string>* decode(char* s, int bytes_read) {
-        vector<string>* decoded_strings = new vector<string>();
-        int start = 0;
-        bool in_msg = false;
-        int tic_counter = 0;
-
-        for (int i = 0; i < bytes_read; i++) {
-            if (s[i] == '`') {
-                tic_counter ++;
-                if (in_msg && tic_counter == 3) {
-                    char* decoded = new char[i - start - 2];
-                    memcpy(decoded, s + start, i - start - 2);
-                    string* str = new string(decoded);
-                    decoded_strings->push_back(*str);
-                    delete[] decoded;
-                    tic_counter = 0;
-                }
-                else if (tic_counter == 3) {
-                    start = i + 1;
-                }
-                in_msg = !in_msg;
-            }
-            else {
-                tic_counter = 0;
-            }
-        }
-        return decoded_strings;
-    }
-
-    // backticks are not a valid character to send
-    char* encode(string s) {
+    //adds number of bytes in the given string as 4 digit number 
+    //padded with 0s to the beginning of the string
+    string* encode(string* s) {
         stringstream ss;
-        ss << setw(4) << setfill('0') << (s.size() + 1);
+        ss << setw(4) << setfill('0') << (s->size() + 1);
         string* result = new string(ss.str());
-        result->append(s);
+        result->append(*s);
 
-        return (char*)result->c_str();
+        return result;
     }
 
     void set_up_rower(char* r) {
-        // printf("rower serialized: %s\n", r);
+        if (rower != nullptr) {
+            delete rower;
+        }
+        
+        //not sure how to do this better, open to suggestions
+        //one idea: pass in a list of functions to the client which return 
+        //          the correct instance of rower based on the index
         if (r[0] == '0') {
             rower = new FindProjectsRower(r);
         } 
         else if (r[0] == '1') {
             rower = new FindUsersRower(r);
         }
+        else if (r[0] == '2') {
+            rower = new WordCountRower(r);
+        }
     }
 
     void be_client() {
+
+        //gets the node id from the server (server assigns the clients node ids)
         char* node_id = new char[8];
         memset(node_id, '\0', 8);
         read(server_sock, node_id, CLIENT_BUF_SIZE);
         node = new Node(atoi(node_id));
        
+        //used to construct messages
         string* put_msg = new string("");
         string* rower_msg = new string("");
-        while (true) {
-            char* size = new char[4];
 
+        //start listening to messages from the server
+        while (true) {
+
+            //size is the number of bytes to read (every message is encoded with this in encode)
+            char* size = new char[4];
+            
             recv(server_sock, size, 4, 0);
             int bytes_read = 0;
             int bytes_to_read = atoi(size);
             char* buffer = new char[bytes_to_read];
             memset(buffer, '\0', bytes_to_read);
 
+            //reads in given number of bytes
             while (bytes_read < bytes_to_read) {
                 bytes_read += recv(server_sock, buffer, bytes_to_read - bytes_read, 0);
             }
 
-            // printf("buffer: %s\n", buffer);
-
             Message* msg = deserialize_message(buffer);
-            if (msg->type == MsgType::SetRower) {
+
+            //checks message type and does the proper action
+
+            if (msg->type == MsgType::SetRower) { // updates the rower for this client
+                //waits for the whole message, "END" means end of message
                 if (strcmp(msg->contents, "END") == 0) {
                     set_up_rower((char*)rower_msg->c_str());
                     *rower_msg = "";
@@ -173,19 +169,18 @@ public:
                     rower_msg->append(msg->contents);
                 }
             }
-            else if (msg->type == MsgType::Act) {
-                // printf("Trying to apply rower...\n");
+            else if (msg->type == MsgType::Act) { // runs this client's rower on the df corresponding to the given key
                 node->apply(rower, msg->key);           
-                // printf("SUCCESS\n");
-                // printf("Trying to send back rower...\n");
-                send_message(msg->key, (char*)rower->serialize()->c_str());
-                // printf("SUCCESS\n");
+                string* serialized_rower = rower->serialize();
+                send_message(msg->key, (char*)serialized_rower->c_str());
+                delete serialized_rower;
             }
-            else if (msg->type == MsgType::Get) {
+            else if (msg->type == MsgType::Get) { // gets the df corresponding to the given key
                 char* df = node->get(msg->key);
                 send_message(msg->key, df);
+                delete[] df;
             }
-            else if (msg->type == MsgType::Put) {
+            else if (msg->type == MsgType::Put) { // puts the df in our data store
                 if (strcmp(msg->contents, "END") == 0) {
                     node->put(msg->key, (char*)put_msg->c_str());
                     *put_msg = "";
@@ -194,7 +189,9 @@ public:
                     put_msg->append(msg->contents);
                 }
             }
-            else if (msg->type == MsgType::Kill) {
+            else if (msg->type == MsgType::Kill) { // kills this client, initiated by network shutdown
+                delete rower;
+                delete node;
                 delete[] buffer;
                 return;
             }
@@ -204,6 +201,7 @@ public:
         }
     }
 
+    //splits up large messages into list of smaller messages TODO: move to util file
     vector<Message*>* parse_msg(MsgType type, Key* key, char* s, size_t sender) {
         vector<Message*>* messages = new vector<Message*>();
         string* str = new string(s);
@@ -229,6 +227,7 @@ public:
         }
         Message* end_msg = new Message(type, key, (char*)"END", node->id);
         messages->push_back(end_msg);
+        delete str;
         return messages;
     }
 };
