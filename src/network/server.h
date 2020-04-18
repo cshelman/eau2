@@ -187,7 +187,21 @@ public:
                 val = serialize_col_vector(sub_cols);
             }
             for (int j = 0; j < sub_cols->size(); j++) {
-                delete sub_cols->at(j);
+                if (sub_cols->at(j)->get_type() == 'I') {
+                    delete sub_cols->at(j)->as_int();
+                }
+                else if (sub_cols->at(j)->get_type() == 'F') {
+                    delete sub_cols->at(j)->as_float();
+                }
+                else if (sub_cols->at(j)->get_type() == 'B') {
+                    delete sub_cols->at(j)->as_bool();
+                }
+                else if (sub_cols->at(j)->get_type() == 'S') {
+                    delete sub_cols->at(j)->as_string();
+                }
+                else {
+                    printf("Invalid column type when deleting sub_cols after put\n");
+                }
             }
             sub_cols->clear();
             delete sub_cols;

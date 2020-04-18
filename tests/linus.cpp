@@ -87,6 +87,7 @@ int main(int argc, char** argv) {
 
     serv->shutdown();
 
+    delete[] uids;
     delete serv;
     delete net_serv;
     delete commits_key;

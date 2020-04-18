@@ -48,7 +48,7 @@ run_linus: build_linus
 	./linus.out 127.0.0.1:8080 3
 
 valgrind_linus: build_linus
-	valgrind --leak-check=full ./linus.out 127.0.0.1:8080 1
+	valgrind --leak-check=full ./linus.out 127.0.0.1:8080 2
 
 demo: build_linus build_client
 	./linus.out 127.0.0.1:8080 3 &

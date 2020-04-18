@@ -141,6 +141,7 @@ public:
             buffer->append(temp_buffer);
 
             client_ips->push_back((char*)buffer->c_str());
+            delete buffer;
 
             int index = client_sockets->size();
             char* sock = new char[16];
@@ -149,7 +150,7 @@ public:
 
             char* assigned_node_num = (char*)to_string(index).c_str();
             send(atoi(client_sockets->at(index)), assigned_node_num, strlen(assigned_node_num) + 1, 0);
-            ts[index] = new thread(&NetworkServer::listening, this, sock);
+            ts[index] = new thread(&NetworkServer::listening, this, sock); 
         }
     }
 
@@ -159,6 +160,7 @@ public:
         for (int i = 0; i < client_sockets->size(); i++) {
             ts[i]->join();
             close(atoi(client_sockets->at(i)));
+            delete ts[i];
             delete[] client_sockets->at(i);
         }
     }
