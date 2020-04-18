@@ -61,7 +61,7 @@ public:
         delete master_queue;
         delete client_ips;
         delete client_sockets;
-        delete ts;
+        delete[] ts;
     }
 
     //adds number of bytes in the given string as 4 digit number 
@@ -97,7 +97,8 @@ public:
     //runs in a different thread for each client connected to network
     void listening(char* client_sock) {
         while (true) {
-            char* size = new char[4];
+            char* size = new char[5];
+            size[4] = '\0';
 
             recv(atoi(client_sock), size, 4, 0);
             int bytes_to_read = atoi(size);

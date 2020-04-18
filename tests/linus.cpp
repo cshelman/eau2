@@ -11,7 +11,7 @@ int main(int argc, char** argv) {
     Server* serv = new Server(net_serv);
     
     // ------------------- DEGREES OF LINUS CONFIG VALUES ---------------------
-    size_t BYTES_TO_READ = 1000000000;
+    size_t BYTES_TO_READ = 1000;
     int LINUS = 4967; // 4967 is linus
     int DEGREE = 4;
     char* COMMITS_PATH = (char*)"data/commits.ltgt";
