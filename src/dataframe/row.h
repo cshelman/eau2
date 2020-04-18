@@ -79,7 +79,9 @@ public:
     }
 
     ~Row() {
-      // dont delete contents of types_, still pointers
+      for (int i = 0; i < types_->size(); i++) {
+        delete types_->at(i);
+      }
       delete types_;
       for (int i = 0; i < int_arr->size(); i++) {
         delete int_arr->at(i);

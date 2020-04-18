@@ -100,10 +100,10 @@ public:
             char* size = new char[4];
 
             recv(atoi(client_sock), size, 4, 0);
-            int bytes_read = 0;
             int bytes_to_read = atoi(size);
             delete[] size;
 
+            int bytes_read = 0;
             if (bytes_to_read > 0) {
                 char* buffer = new char[bytes_to_read];
                 memset(buffer, '\0', bytes_to_read);

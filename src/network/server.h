@@ -202,10 +202,6 @@ public:
             delete messages;
         }
         
-        for (int i = 0; i < col_arr->size(); i++) {
-            delete col_arr->at(i);
-        }
-        col_arr->clear();
         delete col_arr;
     }
 

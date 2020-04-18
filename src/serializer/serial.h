@@ -354,8 +354,8 @@ Message* deserialize_message(char* s) {
     
     Key* key = new Key(name);
     Message* msg = new Message(type, key, contents, sender);
-    delete name;
-    delete contents;
+    delete[] name;
+    delete[] contents;
     delete key;
     delete str;
     return msg;

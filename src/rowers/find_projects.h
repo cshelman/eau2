@@ -64,7 +64,7 @@ public:
         project_ids[i] = project_ids[i] || r->project_ids[i];
     }
 
-    delete other;
+    delete r;
   }
 
   Rower* clone() {

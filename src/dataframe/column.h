@@ -22,7 +22,7 @@ public:
     char type;
 
     /** Type converters: Return same column under its actual type, or
-     *  nullptr if of the wrong type.  */
+     *  nullptr if of the wrong type. */
     virtual IntColumn* as_int() {
         printf("invalid as_int\n");
         exit(1);

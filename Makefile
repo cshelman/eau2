@@ -14,8 +14,6 @@ run_dataframe: build_dataframe
 run_serialize: build_serialize
 	./test_serialize.out
 
-valgrind: valgrind_dataframe valgrind_serialize
-
 valgrind_dataframe: build_dataframe
 	valgrind --leak-check=full ./test_dataframe.out
 
@@ -39,6 +37,9 @@ run_client_2: build_client
 
 run_client_3: build_client
 	./test_client.out 127.0.0.13:8083 127.0.0.1:8080
+
+valgrind_client: build_client
+	valgrind --leak-check=full ./test_client.out 127.0.0.11:8081 127.0.0.1:8080
 
 build_linus:
 	g++ -g -std=c++11 tests/linus.cpp -o linus.out -lpthread

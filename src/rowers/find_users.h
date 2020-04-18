@@ -55,7 +55,6 @@ public:
   bool accept(Row& r) {
     if (project_ids[r.get_int(0)]) {
         user_ids[r.get_int(1)] = true;
-        user_ids[r.get_int(2)] = true;
     }
 
     return true;
@@ -67,7 +66,7 @@ public:
         user_ids[i] = user_ids[i] || r->user_ids[i];
     }
 
-    delete other;
+    delete r;
   }
 
   Rower* clone() {

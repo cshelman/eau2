@@ -262,7 +262,7 @@ void print_type(int type) {
 DataFrame* parseSor(char* filePath, size_t from, size_t len, size_t* highest_user, size_t* highest_project)
 {
     // open file
-    ifstream file(filePath);
+    ifstream* file = new ifstream(filePath);
 
     int lineNumber = 0;
     int columns = 0;
@@ -270,7 +270,7 @@ DataFrame* parseSor(char* filePath, size_t from, size_t len, size_t* highest_use
     string line;
 
     // read either EOF or first 500, which either comes first
-    while ((lineNumber < 500) && getline(file, line, '\n')) {
+    while ((lineNumber < 500) && getline(*file, line, '\n')) {
          vector<int> currentTypes = parse_type(line);
          int currentColumns = currentTypes.size();
 
@@ -292,13 +292,13 @@ DataFrame* parseSor(char* filePath, size_t from, size_t len, size_t* highest_use
     }
 
     // move the pointer to the from flag user specified
-    file.clear();
-    file.seekg(from, file.beg);
+    file->clear();
+    file->seekg(from, file->beg);
 
     // to avoid reading partial file, ignore the first row
     // if from is not 0
     if (from != 0) {
-        getline(file, line, '\n');
+        getline(*file, line, '\n');
     }
 
     // store the content of the file
@@ -331,9 +331,9 @@ DataFrame* parseSor(char* filePath, size_t from, size_t len, size_t* highest_use
     }
 
     DataFrame* df = new DataFrame(*sc);
-    while (getline(file, line, '\n')) {
+    while (getline(*file, line, '\n')) {
         // if exceed reading length, break
-        if (file.tellg() > (len + from)) {
+        if (file->tellg() > (len + from)) {
             break;
         }
 
@@ -371,8 +371,9 @@ DataFrame* parseSor(char* filePath, size_t from, size_t len, size_t* highest_use
     }
 
     // close file
-    file.close();
+    file->close();
     delete sc;
+    delete file;
     
     return df;
 }
