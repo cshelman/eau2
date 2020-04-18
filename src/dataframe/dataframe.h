@@ -296,6 +296,7 @@ public:
             fill_row(i, *cur_row);
             cur_row->set_idx(i);
             r->accept(*cur_row);
+            delete cur_row;
         }
     }
 
@@ -321,6 +322,7 @@ public:
             if (i != 0) {
                 rowers[0]->join_delete(rowers[i]);
             }
+            delete threads[i];
         }
     }
 };

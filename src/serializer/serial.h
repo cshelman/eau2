@@ -248,38 +248,39 @@ vector<Column*>* deserialize_col_vector(char* s) {
     int pos = 0;
     while (pos != string::npos) {
         pos = str->find("},", prev_pos);
-        string token;
+        string* token = new string();
         if (pos == string::npos) {
-            token = str->substr(prev_pos + 1, str->size() - prev_pos - 1);
+            *token = str->substr(prev_pos + 1, str->size() - prev_pos - 1);
         }
         else {
-            token = str->substr(prev_pos + 1, pos - prev_pos);
+            *token = str->substr(prev_pos + 1, pos - prev_pos);
             prev_pos = pos + 2;
         }
 
-        string type = token.substr(0, 1);
+        string type = token->substr(0, 1);
         
         if (type == "I") {
-            vector<int>* vi = deserialize_int_vector((char*)token.substr(3, token.size() - 3).c_str());
+            vector<int>* vi = deserialize_int_vector((char*)token->substr(3, token->size() - 3).c_str());
             IntColumn* ic = new IntColumn(vi);
             delete vi;
             vc->push_back(ic);
         } else if (type == "F") {
-            vector<float>* vf = deserialize_float_vector((char*)token.substr(3, token.size() - 3).c_str());
+            vector<float>* vf = deserialize_float_vector((char*)token->substr(3, token->size() - 3).c_str());
             FloatColumn* fc = new FloatColumn(vf);
             delete vf;
             vc->push_back(fc);
         } else if (type == "S") {
-            vector<String*>* vs = deserialize_str_vector((char*)token.substr(3, token.size() - 3).c_str());
+            vector<String*>* vs = deserialize_str_vector((char*)token->substr(3, token->size() - 3).c_str());
             StringColumn* sc = new StringColumn(vs);
             delete vs;
             vc->push_back(sc);
         } else if (type == "B") {
-            vector<bool>* vb = deserialize_bool_vector((char*)token.substr(3, token.size() - 3).c_str());
+            vector<bool>* vb = deserialize_bool_vector((char*)token->substr(3, token->size() - 3).c_str());
             BoolColumn* bc = new BoolColumn(vb);
             delete vb;
             vc->push_back(bc);
         }
+        delete token;
     }
 
     delete str;

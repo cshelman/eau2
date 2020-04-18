@@ -40,6 +40,7 @@ public:
     int server_sock;
     Node* node;
     Rower* rower;
+    int rower_type;
 
     Client(char* address_in, char* server_address) {
         address = new char[strlen(address_in) + 1];
@@ -60,11 +61,9 @@ public:
     }
 
     ~Client() {
-
-    }
-
-    void set_rower(Rower* r) {
-        rower = r->clone();
+        delete_rower();
+        delete node;
+        delete[] address;
     }
 
     // create connection with server
@@ -90,6 +89,7 @@ public:
             string* serialized_msg = serialize_message(msgs->at(i));
             string* encoded_msg = encode(serialized_msg);
             send(server_sock, (char*)encoded_msg->c_str(), encoded_msg->size() + 1, 0);
+            delete msgs->at(i);
             delete serialized_msg;
             delete encoded_msg;
         }
@@ -107,32 +107,53 @@ public:
         return result;
     }
 
-    void set_up_rower(char* r) {
-        if (rower != nullptr) {
+    void delete_rower() {
+        if (rower_type == 0) {
+            FindProjectsRower* cr = dynamic_cast<FindProjectsRower*>(rower);
+            delete cr;
+        }
+        else if (rower_type == 1) {
+            FindUsersRower* cr = dynamic_cast<FindUsersRower*>(rower);
+            delete cr;
+        }
+        else if (rower_type == 2) {
+            WordCountRower* cr = dynamic_cast<WordCountRower*>(rower);
+            delete cr;
+        }
+        else {
             delete rower;
         }
-        
+        rower = nullptr;
+    }
+
+    void set_up_rower(char* r) {
+        if (rower != nullptr) {
+            delete_rower();
+        }        
         //not sure how to do this better, open to suggestions
         //one idea: pass in a list of functions to the client which return 
         //          the correct instance of rower based on the index
         if (r[0] == '0') {
             rower = new FindProjectsRower(r);
+            rower_type = 0;
         } 
         else if (r[0] == '1') {
             rower = new FindUsersRower(r);
+            rower_type = 1;
         }
         else if (r[0] == '2') {
             rower = new WordCountRower(r);
+            rower_type = 2;
         }
     }
 
     void be_client() {
-
         //gets the node id from the server (server assigns the clients node ids)
         char* node_id = new char[8];
         memset(node_id, '\0', 8);
-        read(server_sock, node_id, CLIENT_BUF_SIZE);
+        read(server_sock, node_id, 8);
         node = new Node(atoi(node_id));
+        delete[] node_id;
        
         //used to construct messages
         string* put_msg = new string("");
@@ -140,9 +161,9 @@ public:
 
         //start listening to messages from the server
         while (true) {
-
             //size is the number of bytes to read (every message is encoded with this in encode)
-            char* size = new char[4];
+            char* size = new char[5];
+            size[4] = '\0';
             
             recv(server_sock, size, 4, 0);
             int bytes_read = 0;
@@ -155,6 +176,8 @@ public:
                 bytes_read += recv(server_sock, buffer, bytes_to_read - bytes_read, 0);
             }
 
+            delete[] size;
+
             Message* msg = deserialize_message(buffer);
 
             //checks message type and does the proper action
@@ -163,7 +186,8 @@ public:
                 //waits for the whole message, "END" means end of message
                 if (strcmp(msg->contents, "END") == 0) {
                     set_up_rower((char*)rower_msg->c_str());
-                    *rower_msg = "";
+                    delete rower_msg;
+                    rower_msg = new string();
                 }
                 else {
                     rower_msg->append(msg->contents);
@@ -183,16 +207,18 @@ public:
             else if (msg->type == MsgType::Put) { // puts the df in our data store
                 if (strcmp(msg->contents, "END") == 0) {
                     node->put(msg->key, (char*)put_msg->c_str());
-                    *put_msg = "";
+                    delete put_msg;
+                    put_msg = new string();
                 }
                 else {
                     put_msg->append(msg->contents);
                 }
             }
             else if (msg->type == MsgType::Kill) { // kills this client, initiated by network shutdown
-                delete rower;
-                delete node;
+                delete msg;
                 delete[] buffer;
+                delete rower_msg;
+                delete put_msg;
                 return;
             }
 

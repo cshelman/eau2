@@ -24,7 +24,9 @@ public:
     }
 
     ~Node() {
-        pairs->clear();
+        for (pair<string, DataFrame*> element : *pairs) {
+            delete element.second;
+        }
         delete pairs;
     }
 
@@ -82,6 +84,26 @@ public:
             }
           
             pairs->insert({key->name, df});
+
+            for (int i = 0; i < col_arr->size(); i++) {
+                if (col_arr->at(i)->get_type() == 'I') {
+                    delete col_arr->at(i)->as_int();
+                }
+                else if (col_arr->at(i)->get_type() == 'F') {
+                    delete col_arr->at(i)->as_float();
+                }
+                else if (col_arr->at(i)->get_type() == 'B') {
+                    delete col_arr->at(i)->as_bool();
+                }
+                else if (col_arr->at(i)->get_type() == 'S') {
+                    delete col_arr->at(i)->as_string();
+                }
+                else {
+                    printf("Invalid column type when deleting col_arr in node put\n");
+                }
+            }
+            delete col_arr;
+            delete schema;
         }
     }
 };
