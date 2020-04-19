@@ -70,7 +70,9 @@ public:
                 printf("Node received blank PUT\n");
                 return;
             }
-            
+
+            // printf("Starting node put\n");
+            // printf("\tTrying to deserialize column vector\n");
             vector<Column*>* col_arr = deserialize_col_vector(data);
 
             //we receive a vector of columns from the client
@@ -79,12 +81,15 @@ public:
             schema->num_rows_ = col_arr->at(0)->size();
             DataFrame* df = new DataFrame(*schema);
             
+            // printf("\tTrying to add cols to dataframe\n");
             for (int i = 0; i < col_arr->size(); i++) {
                 df->add_column(col_arr->at(i));
             }
           
+            // printf("\tTrying to insert to map\n");
             pairs->insert({key->name, df});
 
+            // printf("\tTrying to delete col_arr\n");
             for (int i = 0; i < col_arr->size(); i++) {
                 if (col_arr->at(i)->get_type() == 'I') {
                     delete col_arr->at(i)->as_int();
@@ -104,6 +109,7 @@ public:
             }
             delete col_arr;
             delete schema;
+            // printf("\tDone with node put\n");
         }
     }
 };

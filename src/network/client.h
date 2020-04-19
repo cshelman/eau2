@@ -194,9 +194,15 @@ public:
                 }
             }
             else if (msg->type == MsgType::Act) { // runs this client's rower on the df corresponding to the given key
-                node->apply(rower, msg->key);           
+                printf("starting to apply rower\n");
+                node->apply(rower, msg->key);
+                printf("done applying rower\n");
+                printf("start serializing rower\n");
                 string* serialized_rower = rower->serialize();
+                printf("done serializing\n");
+                printf("starting send\n");
                 send_message(msg->key, (char*)serialized_rower->c_str());
+                printf("done send\n");
                 delete serialized_rower;
             }
             else if (msg->type == MsgType::Get) { // gets the df corresponding to the given key

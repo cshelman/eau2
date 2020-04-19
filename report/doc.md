@@ -59,11 +59,11 @@ How do we efficiently debug a program that takes upwards of 10 minutes to get to
 
 ### Status:
 
-- Eau2 works entirely on "small" data (less than 1GB for sure, unsure of exact upper limit).
-- However, the datastore works 100% even on large data.
-- On large data the clients segfault when we attempt to run rower operations.
-    - we suspect it is a memory related issue when sending the large rowers (but we aren't sure).
-- Memory leaks are still a small issue, but we have fixed nearly all major contributors.
+- Eau2 seems to work entirely.
+- When running on large (> 1GB) data and more than 3 clients, some clients crash at the end.
+    - Unsure of why, but it seems that cpu does not multithread that high?
+    - Some clients tend to take turns running the rower instead of all going at the same time.
+- All data leaks (except a small fixed size one) have been eradicated.
 - Degrees of linus currently has to be run from multiple processes, there is no single file demo.
 
 TODOs:
