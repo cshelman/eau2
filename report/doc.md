@@ -52,6 +52,7 @@ To run (in separate terminal clients):
 - make run_client
 - make run_client_2
 - make run_client_3
+- ./test_client.out <address>:<port> <server_addr>:<server_port>
 
 ### Open questions:
 
