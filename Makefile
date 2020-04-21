@@ -45,16 +45,15 @@ build_linus:
 	g++ -g -std=c++11 tests/linus.cpp -o linus.out -lpthread
 
 run_linus: build_linus
-	./linus.out 127.0.0.1:8080 3
+	./linus.out 127.0.0.1:8080 2
 
 valgrind_linus: build_linus
-	valgrind --leak-check=full ./linus.out 127.0.0.1:8080 2
+	valgrind --leak-check=full ./linus.out 127.0.0.1:8080 1
 
 demo: build_linus build_client
-	./linus.out 127.0.0.1:8080 3 &
+	./linus.out 127.0.0.1:8080 2 &
 	./test_client.out 127.0.0.11:8081 127.0.0.1:8080 &
-	./test_client.out 127.0.0.12:8082 127.0.0.1:8080 &
-	./test_client.out 127.0.0.13:8083 127.0.0.1:8080
+	./test_client.out 127.0.0.12:8082 127.0.0.1:8080
 
 clean:
 	rm *.out
