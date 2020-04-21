@@ -185,7 +185,9 @@ public:
             if (msg->type == MsgType::SetRower) { // updates the rower for this client
                 //waits for the whole message, "END" means end of message
                 if (strcmp(msg->contents, "END") == 0) {
+                    printf("Received full SET_ROWER message\nSetting rower...\n");
                     set_up_rower((char*)rower_msg->c_str());
+                    printf("Done setting\n\n");
                     delete rower_msg;
                     rower_msg = new string();
                 }
@@ -194,25 +196,27 @@ public:
                 }
             }
             else if (msg->type == MsgType::Act) { // runs this client's rower on the df corresponding to the given key
-                printf("starting to apply rower\n");
+                printf("Received ACT message\nApplying rower...\n");
                 node->apply(rower, msg->key);
-                printf("done applying rower\n");
-                printf("start serializing rower\n");
+                printf("Sending rower...\n");
                 string* serialized_rower = rower->serialize();
-                printf("done serializing\n");
-                printf("starting send\n");
                 send_message(msg->key, (char*)serialized_rower->c_str());
-                printf("done send\n");
+                printf("Finished sending\n\n");
                 delete serialized_rower;
             }
             else if (msg->type == MsgType::Get) { // gets the df corresponding to the given key
+                printf("Received GET message\nGetting from KV store...\n");
                 char* df = node->get(msg->key);
+                printf("Sending data packet...\n");
                 send_message(msg->key, df);
+                printf("Finished sending\n\n");
                 delete[] df;
             }
             else if (msg->type == MsgType::Put) { // puts the df in our data store
                 if (strcmp(msg->contents, "END") == 0) {
+                    printf("Received full PUT message\nStoring in the node's KV store...\n");
                     node->put(msg->key, (char*)put_msg->c_str());
+                    printf("Done storing\n\n");
                     delete put_msg;
                     put_msg = new string();
                 }
@@ -221,6 +225,7 @@ public:
                 }
             }
             else if (msg->type == MsgType::Kill) { // kills this client, initiated by network shutdown
+                printf("Shutting down\n");
                 delete msg;
                 delete[] buffer;
                 delete rower_msg;

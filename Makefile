@@ -45,7 +45,7 @@ build_linus:
 	g++ -g -std=c++11 tests/linus.cpp -o linus.out -lpthread
 
 run_linus: build_linus
-	./linus.out 127.0.0.1:8080 2
+	./linus.out 127.0.0.1:8080 3
 
 valgrind_linus: build_linus
 	valgrind --leak-check=full ./linus.out 127.0.0.1:8080 2

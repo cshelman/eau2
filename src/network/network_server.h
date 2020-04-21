@@ -130,6 +130,7 @@ public:
 
     //waits for the given number of clients to join the network
     void registration() {
+        printf("Server waiting for %d clients to connect\n", num_nodes);
         while (client_ips->size() < num_nodes) {
             string* buffer = new string();
             int client_sock;
@@ -150,8 +151,10 @@ public:
 
             char* assigned_node_num = (char*)to_string(index).c_str();
             send(atoi(client_sockets->at(index)), assigned_node_num, strlen(assigned_node_num) + 1, 0);
-            ts[index] = new thread(&NetworkServer::listening, this, sock); 
+            ts[index] = new thread(&NetworkServer::listening, this, sock);
+            printf("\tClient %ld connected\n", client_ips->size());
         }
+        printf("\n");
     }
 
     //kills all threads listening to the clients

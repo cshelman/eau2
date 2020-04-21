@@ -294,23 +294,19 @@ public:
         for (int i = rower_num * rower_rows; i < end_row; i++) {
             Row* cur_row = new Row(*schema_);
             if (rower_num == 0) {
-            //   printf("starting fill row\n");
             }
             fill_row(i, *cur_row);
             if (rower_num == 0) {
-            //   printf("setting idx\n");
             }
             cur_row->set_idx(i);
             if (rower_num == 0) {
-            //   printf("run rower on row\n");
             }
             r->accept(*cur_row);
             if (rower_num == 0) {
-            //   printf("done with row\n");
             }
             delete cur_row;
         }
-        printf("thread %ld finished\n", rower_num);
+        // printf("thread %ld finished\n", rower_num);
     }
 
     /** This method clones the Rower and executes the map in parallel. Join is

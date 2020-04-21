@@ -11,7 +11,7 @@ int main(int argc, char** argv) {
     Server* serv = new Server(net_serv);
     
     // ------------------- DEGREES OF LINUS CONFIG VALUES ---------------------
-    size_t BYTES_TO_READ = SIZE_MAX;
+    size_t BYTES_TO_READ = 10000000;
     int LINUS = 4967; // 4967 is linus
     int DEGREE = 4;
     char* COMMITS_PATH = (char*)"data/commits.ltgt";
@@ -22,38 +22,38 @@ int main(int argc, char** argv) {
     size_t uid_size = 0;
     size_t pid_size = 0;
 
-    printf("Trying to parse commits\n");
+    printf("Parsing commits...\n");
     DataFrame* commits_df = parseSor(COMMITS_PATH, 0, BYTES_TO_READ, &uid_size, &pid_size);
     Key* commits_key = new Key("commits");
-    printf("Trying to put commits\n");
+    printf("Putting commits...\n");
     serv->put(commits_key, commits_df);
-    printf("Trying to delete commits\n");
+    printf("Deleting local commits...\n");
     delete commits_df;
-    printf("Done with commits\n");
+    printf("Done with commits\n\n");
     
-    printf("Trying to parse users\n");
+    printf("Parsing users...\n");
     DataFrame* users_df = parseSor(USERS_PATH, 0, BYTES_TO_READ);
     Key* users_key = new Key("users");
-    printf("Trying put users\n");
+    printf("Putting users...\n");
     serv->put(users_key, users_df);
-    printf("Trying to delete users\n");
+    printf("Deleting local users...\n");
     delete users_df;
-    printf("Done with users\n");
+    printf("Done with users\n\n");
 
-    printf("Trying to parse projects\n");
+    printf("Parsing projects...\n");
     DataFrame* projects_df = parseSor(PROJECTS_PATH, 0, BYTES_TO_READ);
     Key* projects_key = new Key("projects");
-    printf("Trying put projects\n");
+    printf("Putting projects...\n");
     serv->put(projects_key, projects_df);
-    printf("Trying to delete projects\n");
+    printf("Deleting local projects...\n");
     delete projects_df;
     printf("Done with projects\n");
 
     uid_size++;
     pid_size++;
     if (LINUS >= uid_size) {
-        printf("Linus(%d) is not in the given dataset\n", LINUS);
-        printf("Setting Linus' ID to 0\n");
+        printf("\nLinus(%d) is not in the given dataset", LINUS);
+        printf("\nSetting Linus' ID to 0\n");
         LINUS = 0;
     }
 
@@ -80,7 +80,7 @@ int main(int argc, char** argv) {
             }
         }
         
-        printf("\tDegree %d: %ld users found\n", i+1, count);
+        printf("\t%ld users found\n", count);
         delete fpr;
         delete fur;
     }
@@ -94,6 +94,6 @@ int main(int argc, char** argv) {
     delete users_key;
     delete projects_key;
 
-    printf("Linus: SUCCESS\n");
+    printf("\nDegrees of Linus: COMPLETED\n");
     return 0;
 }
